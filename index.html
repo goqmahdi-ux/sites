@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TAHER — Barbería · Basra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500&family=Space+Grotesk:wght@400;500;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2efe7;--ink:#141109;--mut:#8c8678;--line:rgba(20,17,9,.17);
+  --surf:#e9e5db;--surf2:#e2ddd0;
+  --fd:'Playfair Display',serif;--fm:'Space Grotesk',monospace;--fb:'Space Grotesk',sans-serif;--far:'Tajawal',sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:var(--fb);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--ink);color:var(--bg)}
+a{color:inherit;text-decoration:none}
+img,video{display:block;width:100%;height:100%;object-fit:cover}
+.wrap{max-width:640px;margin:0 auto;padding:0 22px}
+
+.eye{font-family:var(--fm);font-weight:500;font-size:11px;letter-spacing:3px;color:var(--mut);text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:9px}
+.eye::before{content:"—";color:var(--mut)}
+
+/* topbar */
+.top{position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:1px solid var(--line);padding-top:var(--safe-t)}
+.top .in{max-width:640px;margin:0 auto;padding:16px 22px;display:flex;align-items:center;justify-content:space-between}
+.top .bm{font-family:var(--fm);font-weight:700;font-size:17px;letter-spacing:4px;cursor:pointer;user-select:none}
+.top .mn{font-family:var(--far);font-weight:900;font-size:14px;cursor:pointer;border:1px solid var(--ink);background:none;color:var(--ink);padding:7px 16px}
+
+/* HERO */
+.hero{min-height:94svh;display:flex;flex-direction:column;justify-content:center;padding:30px 0 34px;position:relative;overflow:hidden}
+.hero .eye{justify-content:center;margin-bottom:6px;animation:fadeUp 1s .1s both}
+.stage{position:relative;display:grid;place-items:center;margin:4px 0}
+.stage>*{grid-area:1/1}
+.word{font-family:var(--fd);font-weight:800;font-size:clamp(76px,26vw,168px);line-height:.9;letter-spacing:-3px;text-align:center;z-index:1;
+  opacity:0;transform:translateY(46px);animation:wordIn 1.1s .25s cubic-bezier(.2,.85,.25,1) forwards}
+.chair{z-index:2;width:min(92%,430px);justify-self:center;align-self:center}
+.chair canvas{display:block;width:100%;aspect-ratio:3/4;filter:drop-shadow(0 26px 30px rgba(0,0,0,.18))}
+.stage::after{content:"";position:absolute;bottom:4%;left:50%;transform:translateX(-50%);width:56%;height:22px;z-index:0;
+  background:radial-gradient(ellipse,rgba(20,17,9,.26),transparent 70%);filter:blur(5px);animation:shPulse 16s linear 1.7s infinite}
+@keyframes wordIn{to{opacity:1;transform:translateY(0)}}
+@keyframes chairIn{0%{opacity:0;transform:scale(.72)}100%{opacity:1;transform:scale(1)}}
+@keyframes spin360{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+@keyframes shPulse{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.9}50%{transform:translateX(-50%) scaleX(.6);opacity:.5}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.cap{text-align:center;font-family:var(--fm);font-weight:700;font-size:12px;letter-spacing:4px;color:var(--mut);margin-top:6px;animation:fadeUp 1s .8s both}
+.hero-cta{text-align:center;margin-top:24px;animation:fadeUp 1s 1s both}
+.cta-btn{font-family:var(--far);font-weight:900;font-size:18px;background:var(--ink);color:var(--bg);border:none;cursor:pointer;padding:16px 36px;display:inline-flex;align-items:center;gap:10px;transition:.2s}
+.cta-btn:active{transform:scale(.96)}
+.hero .meta{display:flex;justify-content:space-between;margin-top:34px;font-family:var(--fm);font-weight:500;font-size:11px;letter-spacing:2px;color:var(--mut);text-transform:uppercase;animation:fadeUp 1s 1.1s both}
+
+/* sections */
+.sec{padding:54px 0;border-top:1px solid var(--line)}
+.sec .t{font-family:var(--fd);font-weight:700;font-size:clamp(40px,12vw,64px);line-height:1;margin-top:14px;letter-spacing:-1px;text-align:center}
+
+.cuts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:28px}
+.cut{background:var(--bg)}
+.cut .ph{aspect-ratio:3/4;overflow:hidden;background:var(--surf)}
+.cut .ph img{transition:transform .6s cubic-bezier(.2,.8,.2,1);filter:grayscale(.12) contrast(1.02)}
+.cut:active .ph img{transform:scale(1.04)}
+.cut .lb{padding:12px;font-family:var(--fm);font-weight:700;font-size:12px;letter-spacing:.5px;border-top:1px solid var(--line);text-transform:uppercase;text-align:center}
+.cut .lb::before{content:"[ "}.cut .lb::after{content:" ]"}
+
+.menu{margin-top:14px;border-top:1px solid var(--ink)}
+.mrow{padding:22px 2px;border-bottom:1px solid var(--line);cursor:pointer;transition:padding .3s,background .25s;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.mrow:active{background:rgba(20,17,9,.04);padding-left:10px}
+.mrow .nm{font-family:var(--fd);font-weight:500;font-size:clamp(26px,7vw,36px);letter-spacing:-.5px;flex:1}
+.mrow .mid{font-family:var(--fm);font-size:12px;color:var(--mut);flex:none}
+.mrow .bk{font-family:var(--far);font-weight:900;font-size:14px;flex:none;color:var(--ink)}
+
+.space{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:28px}
+.space .s{aspect-ratio:1;overflow:hidden;background:var(--surf)}
+.space .s img{filter:grayscale(.15)}
+.space .s.w{grid-column:1/-1;aspect-ratio:16/9}
+
+.band{padding:58px 0;border-top:1px solid var(--line);text-align:center;cursor:pointer}
+.band .k{font-family:var(--fm);font-weight:700;font-size:11px;letter-spacing:4px;color:var(--mut);margin-bottom:12px;text-transform:uppercase}
+.band .t{font-family:var(--far);font-weight:900;font-size:clamp(52px,17vw,110px);line-height:.92}
+.band:active .t{opacity:.55}
+
+.fb{padding:34px 0;border-top:1px solid var(--line);text-align:center}
+.fb .big{font-family:var(--fm);font-weight:700;font-size:34px;letter-spacing:5px}
+.fb .sub{font-family:var(--fm);font-weight:500;font-size:12px;letter-spacing:4px;color:var(--mut);margin-top:6px;text-transform:uppercase}
+.fb .adr{margin-top:16px;font-family:var(--fm);font-weight:500;font-size:13px;line-height:2;letter-spacing:.5px}
+.hr{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);font-family:var(--fm);font-weight:700;font-size:13px;letter-spacing:1px}
+.hr:last-child{border:none}
+.hr.off .t{color:var(--mut)}
+.nav-list a{display:block;padding:15px 0;border-bottom:1px solid var(--line);font-family:var(--fm);font-weight:700;font-size:14px;letter-spacing:1.5px}
+.nav-list a:last-child{border:none}
+.nav-list a::before{content:"[ "}.nav-list a::after{content:" ]"}
+.copy{padding:26px 0 40px;font-family:var(--fm);font-weight:500;font-size:11px;letter-spacing:2px;color:var(--mut);line-height:2;text-transform:uppercase}
+.copy .gear{cursor:pointer}
+
+/* ===== booking sheet (Arabic) ===== */
+.ov{position:fixed;inset:0;z-index:100;background:rgba(20,17,9,.45);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:.3s}
+.ov.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:101;max-width:640px;margin:0 auto;background:var(--bg);direction:rtl;
+  border:1px solid var(--ink);border-bottom:none;transform:translateY(100%);transition:transform .45s cubic-bezier(.22,1,.36,1);
+  max-height:94vh;display:flex;flex-direction:column;padding-bottom:var(--safe-b);font-family:var(--far)}
+.sheet.open{transform:translateY(0)}
+.grab{width:42px;height:4px;background:var(--line);margin:12px auto 0}
+.sh-head{padding:16px 22px 8px;display:flex;align-items:center;justify-content:space-between}
+.sh-head h3{font-family:var(--far);font-weight:900;font-size:26px}
+.sh-head .x{font-family:var(--far);font-weight:700;font-size:14px;cursor:pointer;background:none;border:1px solid var(--line);color:var(--ink);padding:5px 14px}
+.steps{display:flex;gap:6px;padding:0 22px 16px}
+.steps .sd{flex:1;height:2px;background:var(--line);transition:.3s}
+.steps .sd.on{background:var(--ink)}
+.sh-body{overflow-y:auto;padding:4px 22px 18px;flex:1}
+.step{display:none;animation:in .3s ease}
+.step.show{display:block}
+@keyframes in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.st-t{font-family:var(--far);font-weight:900;font-size:16px;margin-bottom:14px}
+
+.date-row{display:flex;overflow-x:auto;padding-bottom:6px;margin-bottom:22px}
+.date-row::-webkit-scrollbar{display:none}
+.dc{flex:none;width:66px;padding:14px 0;border:1px solid var(--line);margin-right:-1px;text-align:center;cursor:pointer;transition:.2s}
+.dc.sel{background:var(--ink);color:var(--bg);position:relative;z-index:1}
+.dc small{display:block;font-family:var(--far);font-weight:700;font-size:12px;color:var(--mut)}
+.dc.sel small,.dc.sel .mo{color:rgba(242,239,231,.75)}
+.dc b{font-family:var(--fm);font-size:19px;display:block;margin-top:3px}
+.dc .mo{font-family:var(--far);font-size:11px;color:var(--mut)}
+
+.times{display:grid;grid-template-columns:repeat(3,1fr)}
+.tc{padding:15px 4px;border:1px solid var(--line);margin:0 -1px -1px 0;text-align:center;cursor:pointer;font-family:var(--far);font-weight:700;font-size:15px;transition:.2s}
+.tc.sel{background:var(--ink);color:var(--bg);position:relative;z-index:1}
+.tc.taken{color:var(--mut);opacity:.4;pointer-events:none;text-decoration:line-through}
+
+.field{margin-bottom:18px}
+.field label{font-family:var(--far);font-weight:700;font-size:14px;color:var(--mut);display:block;margin-bottom:8px}
+.field input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--ink);padding:10px 2px;color:var(--ink);font-family:var(--far);font-weight:700;font-size:20px}
+.field input:focus{outline:none}
+.field input::placeholder{color:var(--mut);opacity:.5;font-weight:400}
+
+.sh-foot{padding:14px 22px calc(16px + var(--safe-b));border-top:1px solid var(--line);display:flex;gap:10px}
+.btn{cursor:pointer;font-family:var(--far);font-weight:900;font-size:16px;padding:16px;flex:1;border:1px solid var(--ink);transition:.2s}
+.btn-p{background:var(--ink);color:var(--bg)}
+.btn-p:active{opacity:.85}
+.btn-g{background:none;color:var(--ink)}
+
+.done{text-align:center;padding:30px 10px}
+.done .ring{width:84px;height:84px;margin:0 auto 20px;border:1px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-size:36px}
+.done h3{font-family:var(--far);font-weight:900;font-size:30px;margin-bottom:8px}
+.done p{color:var(--mut);font-size:15px;font-family:var(--far)}
+.done .code{display:inline-block;margin-top:18px;font-family:var(--fm);font-weight:700;font-size:22px;letter-spacing:3px;border:1px solid var(--ink);padding:12px 24px;direction:ltr}
+
+/* admin */
+.admin{position:fixed;inset:0;z-index:200;background:var(--bg);overflow-y:auto;display:none;padding:calc(18px + var(--safe-t)) 0 40px;direction:rtl;font-family:var(--far)}
+.admin.open{display:block}
+.ah{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ah h2{font-family:var(--far);font-weight:900;font-size:26px}
+.ah .x{font-family:var(--far);font-weight:700;font-size:14px;cursor:pointer;background:none;border:1px solid var(--line);color:var(--ink);padding:5px 14px}
+.ast{display:flex;margin:18px 0}
+.ast .a{flex:1;border:1px solid var(--line);margin-right:-1px;padding:16px;text-align:center}
+.ast .a b{font-family:var(--fm);font-size:24px;display:block}
+.ast .a span{font-family:var(--far);font-weight:700;font-size:12px;color:var(--mut)}
+.bk{border:1px solid var(--line);padding:16px;margin-bottom:11px}
+.bk.new{border-color:var(--ink)}
+.bk-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.bk-top b{font-family:var(--far);font-size:18px;font-weight:900}
+.bk-top .s{font-family:var(--far);font-size:12px;padding:4px 10px;border:1px solid var(--line);color:var(--mut)}
+.bk-top .s.ok{color:var(--ink);border-color:var(--ink)}
+.bk-meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.bk-meta span{font-family:var(--far);font-weight:500;font-size:13px;color:var(--mut);border:1px solid var(--line);padding:5px 10px}
+.bk-act{display:flex;gap:8px}
+.bk-act button,.bk-act a{flex:1;font-family:var(--far);font-weight:700;font-size:14px;padding:11px;cursor:pointer;text-align:center;border:1px solid var(--line);background:none;color:var(--ink)}
+.bk-act .cf{border-color:var(--ink)}
+.empty{text-align:center;padding:50px 20px;color:var(--mut);font-family:var(--far);font-weight:700;font-size:20px}
+
+.toast{position:fixed;bottom:calc(26px + var(--safe-b));left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:14px 24px;font-family:var(--far);font-weight:900;font-size:15px;z-index:300;opacity:0;transition:.3s;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.rv{opacity:0;transform:translateY(28px);transition:.7s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="in">
+  <div class="bm" id="brand">TAHER</div>
+  <button class="mn" onclick="openSheet()">احجز هسه</button>
+</div></header>
+
+<!-- HERO -->
+<section class="hero" id="home"><div class="wrap">
+  <p class="eye">Basra · Iraq</p>
+  <div class="stage">
+    <h1 class="word">TAHER</h1>
+    <div class="chair"><canvas id="chairCv" aria-label="Barber chair"></canvas><video id="chairV" src="img/chair360.mp4" autoplay muted loop playsinline preload="auto" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></video></div>
+  </div>
+  <p class="cap">[ RITUAL ]</p>
+  <div class="hero-cta"><button class="cta-btn" onclick="openSheet()">احجز هسه ↙</button></div>
+  <div class="meta"><span>Basra, Iraq</span><span>Est. 2012</span></div>
+</div></section>
+
+<main class="wrap">
+  <section class="sec" id="cuts">
+    <p class="eye rv">The Cuts / Archive</p>
+    <h2 class="t rv">The Cuts</h2>
+    <div class="cuts" id="cutsGrid"></div>
+  </section>
+
+  <section class="sec" id="services">
+    <p class="eye rv">Services / Menu</p>
+    <h2 class="t rv">The Menu</h2>
+    <div class="menu" id="menuList"></div>
+  </section>
+
+  <section class="sec">
+    <p class="eye rv">Editorial / Space</p>
+    <h2 class="t rv">The Space</h2>
+    <div class="space rv">
+      <div class="s w"><img src="img/space1.jpg" alt="Interior"></div>
+      <div class="s"><img src="img/space2.jpg" alt="Detail"></div>
+      <div class="s"><img src="img/cut3.jpg" alt="Work"></div>
+    </div>
+  </section>
+</main>
+
+<div class="band" id="ctaBook"><div class="wrap">
+  <p class="k">احجز موعدك الحين</p>
+  <h2 class="t">احجز هسه</h2>
+</div></div>
+
+<footer class="wrap">
+  <div class="fb" id="contact">
+    <p class="eye">Ident / 01</p>
+    <div style="margin-top:18px"><div class="big">TAHER</div><div class="sub">Barbería</div></div>
+    <div class="adr">Basra, Iraq<br><a href="https://www.instagram.com/taher_barber2">@taher_barber2</a></div>
+  </div>
+  <div class="fb">
+    <p class="eye" style="margin-bottom:16px">Hours / 02</p>
+    <div class="hr"><span>SAT – THU</span><span class="t">11:00 — 23:00</span></div>
+    <div class="hr off"><span>FRI</span><span class="t">CLOSED</span></div>
+  </div>
+  <div class="copy">© 2026 TAHER BARBERÍA<br>تم إنشاء النظام بواسطة <b style="color:var(--ink);font-weight:700">EGO</b> · للتواصل <a href="https://wa.me/9647830252905" style="color:var(--ink)">07830252905</a><br><span class="gear" id="adminTrigger">Precision · Craft · Basra</span></div>
+</footer>
+
+<!-- SHEET (Arabic, simplified) -->
+<div class="ov" id="ov" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="sh-head"><h3>احجز موعدك</h3><button class="x" onclick="closeSheet()">إغلاق</button></div>
+  <div class="steps" id="steps"><div class="sd on"></div><div class="sd"></div></div>
+  <div class="sh-body">
+    <div class="step show" data-step="1">
+      <div class="st-t">اختار اليوم</div><div class="date-row" id="dateRow"></div>
+      <div class="st-t">اختار الساعة</div><div class="times" id="timeGrid"></div>
+    </div>
+    <div class="step" data-step="2">
+      <div class="st-t">اسمك ورقمك</div>
+      <div class="field"><label>الاسم</label><input id="fName" placeholder="شنو اسمك؟" autocomplete="name"></div>
+      <div class="field"><label>رقم الموبايل</label><input id="fPhone" type="tel" placeholder="07XX XXX XXXX" inputmode="numeric" autocomplete="tel"></div>
+    </div>
+    <div class="step" data-step="3">
+      <div class="done"><div class="ring">✓</div><h3>تم الحجز</h3><p>موعدك محجوز، راح يتواصل وياك طاهر للتأكيد.</p><div class="code" id="bkCode">#0000</div></div>
+    </div>
+  </div>
+  <div class="sh-foot" id="shFoot">
+    <button class="btn btn-g" id="backBtn" onclick="prevStep()" style="display:none">رجوع</button>
+    <button class="btn btn-p" id="nextBtn" onclick="nextStep()">التالي</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin" id="admin"><div class="wrap">
+  <div class="ah"><h2>لوحة طاهر</h2><button class="x" onclick="closeAdmin()">إغلاق</button></div>
+  <div class="ast"><div class="a"><b id="stTotal">0</b><span>الكل</span></div><div class="a"><b id="stWait">0</b><span>انتظار</span></div><div class="a"><b id="stToday">0</b><span>اليوم</span></div></div>
+  <div id="bkList"></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CUTS=[
+  {n:1,name:'French Crop'},{n:2,name:'Curly Taper'},{n:3,name:'Wolf Cut'},{n:4,name:'Burst Mohawk'},
+  {n:5,name:'Slick Undercut'},{n:6,name:'Platinum Fringe'},{n:7,name:'Curtain Waves'},{n:8,name:'Copper Mullet'},
+].map(c=>({img:`img/cut${c.n}.jpg`,vid:`img/cut${c.n}.mp4`,name:c.name}));
+document.getElementById('cutsGrid').innerHTML=CUTS.map(c=>`
+  <div class="cut" onclick="openSheet()"><div class="ph">${c.vid?`<video src="${c.vid}" poster="${c.img}" autoplay muted loop playsinline preload="metadata"></video>`:`<img src="${c.img}" alt="${c.name}" loading="lazy">`}</div><div class="lb">${c.name}</div></div>`).join('');
+
+const SERVICES=[
+  {name:'Classic Cut',min:30},{name:'Beard Sculpt',min:20},{name:'Cut + Beard',min:45},
+  {name:'Clean Shave',min:25},{name:'Skin Care',min:40},{name:'Groom Package',min:90},
+];
+document.getElementById('menuList').innerHTML=SERVICES.map(s=>`
+  <div class="mrow" onclick="openSheet()"><span class="nm">${s.name}</span><span class="mid">${s.min} min</span><span class="bk">احجز</span></div>`).join('');
+
+const TIMES=['11:00 ص','12:00 م','1:00 م','2:00 م','3:00 م','4:00 م','5:00 م','6:00 م','7:00 م','8:00 م','9:00 م','10:00 م'];
+const DAYS=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const MON=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const KEY='taher_barberia_bk2';
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}};
+const save=a=>{try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){}};
+let state={step:1,date:null,time:null};
+
+function buildDates(){const row=document.getElementById('dateRow');let h='';const now=new Date();let a=0,i=0;
+  while(a<8){const d=new Date(now);d.setDate(now.getDate()+i);i++;if(d.getDay()===5)continue;
+    const key=d.toISOString().slice(0,10);const lbl=a===0?'اليوم':DAYS[d.getDay()];
+    h+=`<div class="dc" data-date="${key}" onclick="pickDate('${key}',this)"><small>${lbl}</small><b>${d.getDate()}</b><div class="mo">${MON[d.getMonth()].slice(0,3)}</div></div>`;a++;}
+  row.innerHTML=h;}
+function buildTimes(){const grid=document.getElementById('timeGrid');const taken=state.date?load().filter(b=>b.date===state.date).map(b=>b.time):[];
+  grid.innerHTML=TIMES.map(t=>{const tk=taken.includes(t);const sel=state.time===t?'sel':'';
+    return `<div class="tc ${tk?'taken':''} ${sel}" onclick="${tk?'':`pickTime('${t}',this)`}">${t}</div>`;}).join('');}
+
+function openSheet(){state={step:1,date:null,time:null};buildDates();buildTimes();renderStep();
+  document.getElementById('ov').classList.add('open');document.getElementById('sheet').classList.add('open');document.body.style.overflow='hidden';}
+function closeSheet(){document.getElementById('ov').classList.remove('open');document.getElementById('sheet').classList.remove('open');document.body.style.overflow='';}
+function pickDate(k,el){state.date=k;state.time=null;document.querySelectorAll('.dc').forEach(d=>d.classList.remove('sel'));el.classList.add('sel');buildTimes();}
+function pickTime(t,el){state.time=t;document.querySelectorAll('.tc').forEach(d=>d.classList.remove('sel'));el.classList.add('sel');}
+
+function renderStep(){document.querySelectorAll('.step').forEach(s=>s.classList.toggle('show',+s.dataset.step===state.step));
+  document.querySelectorAll('#steps .sd').forEach((d,i)=>d.classList.toggle('on',i<state.step));
+  document.getElementById('steps').style.display=state.step===3?'none':'flex';
+  const back=document.getElementById('backBtn'),next=document.getElementById('nextBtn');
+  back.style.display=(state.step===2)?'block':'none';
+  if(state.step===1)next.textContent='التالي';
+  if(state.step===2)next.textContent='تأكيد الحجز';
+  if(state.step===3){next.textContent='تمام';next.setAttribute('onclick','closeSheet()');back.style.display='none';}else next.setAttribute('onclick','nextStep()');}
+function nextStep(){
+  if(state.step===1){if(!state.date)return toast('اختار اليوم');if(!state.time)return toast('اختار الساعة');}
+  if(state.step===2){const n=document.getElementById('fName').value.trim();const p=document.getElementById('fPhone').value.trim();
+    if(n.length<2)return toast('اكتب اسمك');if(p.replace(/\D/g,'').length<7)return toast('رقم غير صحيح');return confirmBooking();}
+  state.step++;renderStep();}
+function prevStep(){if(state.step>1){state.step--;renderStep();}}
+function confirmBooking(){const code='#'+Math.floor(1000+Math.random()*9000);
+  const bk={code,date:state.date,time:state.time,name:document.getElementById('fName').value.trim(),phone:document.getElementById('fPhone').value.trim(),status:'wait',created:Date.now()};
+  const all=load();all.push(bk);save(all);document.getElementById('bkCode').textContent=code;
+  document.getElementById('fName').value='';document.getElementById('fPhone').value='';
+  state.step=3;renderStep();}
+
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1800);}
+document.getElementById('ctaBook').onclick=openSheet;
+
+let tc=0,tm;document.getElementById('brand').onclick=()=>{tc++;clearTimeout(tm);tm=setTimeout(()=>tc=0,900);if(tc>=5){tc=0;openAdmin();}};
+document.getElementById('adminTrigger').onclick=openAdmin;
+function openAdmin(){renderAdmin();document.getElementById('admin').classList.add('open');document.body.style.overflow='hidden';}
+function closeAdmin(){document.getElementById('admin').classList.remove('open');document.body.style.overflow='';}
+function renderAdmin(){const all=load().sort((a,b)=>b.created-a.created);const today=new Date().toISOString().slice(0,10);
+  document.getElementById('stTotal').textContent=all.length;document.getElementById('stWait').textContent=all.filter(b=>b.status==='wait').length;document.getElementById('stToday').textContent=all.filter(b=>b.date===today).length;
+  const list=document.getElementById('bkList');
+  if(!all.length){list.innerHTML=`<div class="empty">ماكو حجوزات بعد</div>`;return;}
+  list.innerHTML=all.map(b=>{const d=new Date(b.date);const real=load().findIndex(x=>x.code===b.code&&x.created===b.created);const wa=b.phone.replace(/\D/g,'').replace(/^0/,'964');
+    return `<div class="bk ${b.status==='wait'?'new':''}"><div class="bk-top"><b>${b.name} <span style="font-family:var(--fm);font-size:12px;color:var(--mut)">${b.code}</span></b><span class="s ${b.status==='ok'?'ok':''}">${b.status==='ok'?'مؤكد':'انتظار'}</span></div>
+    <div class="bk-meta"><span>📞 ${b.phone}</span><span>📅 ${DAYS[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</span><span>🕐 ${b.time}</span></div>
+    <div class="bk-act">${b.status==='wait'?`<button class="cf" onclick="confirmBk(${real})">تأكيد</button>`:''}<a class="wa" href="https://wa.me/${wa}" target="_blank">واتساب</a><button onclick="delBk(${real})">حذف</button></div></div>`;}).join('');}
+function confirmBk(i){const a=load();if(a[i]){a[i].status='ok';save(a);renderAdmin();toast('تم التأكيد');}}
+function delBk(i){const a=load();a.splice(i,1);save(a);renderAdmin();toast('تم الحذف');}
+
+/* reveals */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.rv').forEach(e=>io.observe(e));
+</script>
+<script>
+/* soft click sound */
+var __AC;
+function clickSound(){try{
+  if(!__AC)__AC=new (window.AudioContext||window.webkitAudioContext)();
+  if(__AC.state==='suspended')__AC.resume();
+  var t=__AC.currentTime,o=__AC.createOscillator(),g=__AC.createGain();
+  o.type='triangle';o.frequency.setValueAtTime(880,t);o.frequency.exponentialRampToValueAtTime(430,t+0.05);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.08,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
+  o.connect(g).connect(__AC.destination);o.start(t);o.stop(t+0.07);
+}catch(e){}}
+document.addEventListener('pointerdown',function(e){
+  if(e.target.closest('button,a,.opt,.dc,.tc,.mrow,.cut,.cta-btn,.gear,.bm,.x'))clickSound();
+},{passive:true});
+</script>
+<script>
+{const v=document.getElementById('chairV'),c=document.getElementById('chairCv'),x=c.getContext('2d',{willReadFrequently:true});
+let W=0,H=0;
+const poster=new Image();poster.src='img/chair360.jpg';
+function key(){const d=x.getImageData(0,0,W,H),p=d.data;
+ for(let i=0;i<p.length;i+=4){const l=(p[i]*.3+p[i+1]*.59+p[i+2]*.11);const a=(236-l)/26;p[i+3]=a<=0?0:a>=1?255:a*255;}
+ x.putImageData(d,0,0);}
+function size(w,h){if(W!==w){W=c.width=w;H=c.height=h;}}
+poster.onload=()=>{if(!W){size(poster.naturalWidth,poster.naturalHeight);x.drawImage(poster,0,0,W,H);key();}};
+function tick(){if(v.readyState>=2&&v.videoWidth){size(v.videoWidth,v.videoHeight);x.drawImage(v,0,0,W,H);key();}
+ (v.requestVideoFrameCallback?v.requestVideoFrameCallback(tick):requestAnimationFrame(tick));}
+v.play().catch(()=>{});document.addEventListener('touchstart',()=>v.play().catch(()=>{}),{once:true});
+tick();}
+</script>
+</body>
+</html>
