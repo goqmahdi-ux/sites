@@ -66,7 +66,8 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #c9a4
       <div class="fld"><label for="uni">الجامعة أو الجهة</label><input id="uni" class="t" maxlength="120" placeholder="مثلاً: جامعة السبطين للعلوم الطبية"></div>
       <div class="fld"><label for="spec">الاختصاص</label><input id="spec" class="t" maxlength="120" placeholder="مثلاً: طب، تمريض، صيدلة، إعلام"></div>
       <div class="sec">المشاركة في المؤتمر</div>
-      <div class="fld"><label>وقت الحضور المفضّل</label><div class="opts" id="sh"><button type="button" class="opt" data-v="a"><b>12 ظهراً – 6 مساءً</b><span>الوجبة الأولى</span></button><button type="button" class="opt" data-v="b"><b>4 مساءً – 10 ليلاً</b><span>الوجبة الثانية</span></button></div></div>
+      <div class="fld"><label>وقت تواجدك في المؤتمر</label><div class="seg" id="at"><button type="button" data-v="all">متفرغ طول اليوم</button><button type="button" data-v="rng">أحدد الوقت</button></div>
+        <div class="g2" id="rng" style="display:none;margin-top:12px"><div class="fld" style="margin:0"><label for="af">من الساعة</label><select id="af"><option value="">اختر</option><option value="8">8 صباحاً</option><option value="9">9 صباحاً</option><option value="10">10 صباحاً</option><option value="11">11 صباحاً</option><option value="12">12 ظهراً</option><option value="13">1 ظهراً</option><option value="14">2 ظهراً</option><option value="15">3 ظهراً</option><option value="16">4 مساءً</option><option value="17">5 مساءً</option><option value="18">6 مساءً</option><option value="19">7 مساءً</option><option value="20">8 ليلاً</option><option value="21">9 ليلاً</option><option value="22">10 ليلاً</option><option value="23">11 ليلاً</option></select></div><div class="fld" style="margin:0"><label for="ato">إلى الساعة</label><select id="ato"><option value="">اختر</option><option value="8">8 صباحاً</option><option value="9">9 صباحاً</option><option value="10">10 صباحاً</option><option value="11">11 صباحاً</option><option value="12">12 ظهراً</option><option value="13">1 ظهراً</option><option value="14">2 ظهراً</option><option value="15">3 ظهراً</option><option value="16">4 مساءً</option><option value="17">5 مساءً</option><option value="18">6 مساءً</option><option value="19">7 مساءً</option><option value="20">8 ليلاً</option><option value="21">9 ليلاً</option><option value="22">10 ليلاً</option><option value="23">11 ليلاً</option><option value="24">12 منتصف الليل</option></select></div></div></div>
       <div class="fld"><label>الأيام المتاحة</label><div class="seg" id="av"><button type="button" data-v="اليومين">اليومين</button><button type="button" data-v="الجمعة 20 فقط">الجمعة 20</button><button type="button" data-v="السبت 21 فقط">السبت 21</button></div></div>
       <div class="fld"><label>مجالات المساهمة (يمكن اختيار أكثر من مجال)</label><div class="chips" id="fl"><button type="button">الاستقبال والتسجيل</button><button type="button">إرشاد الضيوف</button><button type="button">تنظيم القاعة والجلسات</button><button type="button">التنسيق اللوجستي</button><button type="button">التغطية الإعلامية والتصوير</button></div></div>
       <div class="fld"><label for="exp">خبرة سابقة في تنظيم المؤتمرات والفعاليات</label><textarea id="exp" maxlength="400"></textarea></div>
@@ -91,19 +92,22 @@ fetch(api('session'),{cache:'no-store'}).then(r=>r.json()).then(j=>{if(j&&j.titl
 async function send(route,body){busy(true);try{const r=await fetch(api(route),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});let j={};try{j=await r.json()}catch(e){}return{s:r.status,j}}catch(e){return{s:0,j:{msg:'تعذّر الاتصال بالخادم. تأكد من الإنترنت ثم أعد المحاولة.'}}}finally{busy(false)}}
 const SH={a:'12 ظهراً – 6 مساءً',b:'4 مساءً – 10 ليلاً'};
 
-seg('#g');seg('#av');
-const sh=$('#sh');sh.addEventListener('click',e=>{const b=e.target.closest('.opt');if(!b)return;e.preventDefault();sh.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===b));sh.dataset.v=b.dataset.v});
+seg('#g');seg('#av');seg('#at',v=>{$('#rng').style.display=v==='rng'?'grid':'none'});
+const hl=h=>$('#af').querySelector('option[value="'+h+'"]')?.textContent||$('#ato').querySelector('option[value="'+h+'"]')?.textContent||'';
 $('#fl').addEventListener('click',e=>{const b=e.target.closest('button');if(b){e.preventDefault();b.classList.toggle('on')}});
 $('#f').addEventListener('submit',async e=>{e.preventDefault();
   const ph=digits($('#ph').value),n=$('#n').value.trim(),g=$('#g').dataset.v||'';
   if(ph.length<10){show('bad','اكتب رقم هاتفك كاملاً، مثل 07701234567');$('#ph').focus();return}
   if(n.split(/\s+/).length<2){show('bad','اكتب اسمك الثلاثي');$('#n').focus();return}
   if(!g){show('bad','اختر الجنس');return}
+  const at=$('#at').dataset.v||'';let avt='',avf='',avto='';
+  if(at==='all')avt='طول اليوم';
+  else if(at==='rng'){avf=$('#af').value;avto=$('#ato').value;if(avf===''||avto===''){show('bad','حدّد وقت التواجد: من الساعة وإلى الساعة');return}if(+avto<=+avf){show('bad','وقت النهاية لازم يكون بعد وقت البداية');return}avt='من '+hl(avf)+' إلى '+hl(avto)}
   try{localStorage.setItem('org-ph',ph)}catch(x){}
-  const body={ph,n,g,age:digits($('#age').value),area:$('#area').value.trim(),uni:$('#uni').value.trim(),spec:$('#spec').value.trim(),shift:sh.dataset.v||'',avail:$('#av').dataset.v||'',
+  const body={ph,n,g,avt,avf,avto,age:digits($('#age').value),area:$('#area').value.trim(),uni:$('#uni').value.trim(),spec:$('#spec').value.trim(),avail:$('#av').dataset.v||'',
     field:[...document.querySelectorAll('#fl button.on')].map(b=>b.textContent).join(', '),exp:$('#exp').value.trim(),soc:$('#soc').value.trim()};
   const {s,j}=await send('org-form',body);
-  if(s===200&&j.ok){$('#f').style.display='none';show('ok',`<div class="check" aria-hidden="true">✓</div><b>شكراً ${esc(j.name)}</b>${j.status==='new'?'تم تسجيلك منظماً في المؤتمر، وستصلك تفاصيل مهمتك قريباً.':'تم تحديث معلوماتك لدى اللجنة المنظمة.'}${j.shift?'<br>وقت حضورك: '+SH[j.shift]:''}`)}
+  if(s===200&&j.ok){$('#f').style.display='none';show('ok',`<div class="check" aria-hidden="true">✓</div><b>شكراً ${esc(j.name)}</b>${j.status==='new'?'تم تسجيلك منظماً في المؤتمر، وستصلك تفاصيل مهمتك قريباً.':'تم تحديث معلوماتك لدى اللجنة المنظمة.'}${avt?'<br>وقت تواجدك: '+esc(avt):''}`)}
   else show('bad',esc(j.msg||'تعذّر حفظ المعلومات، حاول مرة أخرى.'));
 });
 })();

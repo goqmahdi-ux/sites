@@ -209,9 +209,10 @@ function poly_edge_m(array $P, float $la, float $lo): float {
 function zone_poly(array $z): ?array { return (isset($z['poly']) && is_array($z['poly']) && count($z['poly']) >= 3) ? $z['poly'] : null; }
 function new_pin(array $S): string { do { $p = (string)random_int(100000, 999999); } while (user_by_pin($S, $p)); return $p; }
 function org_clean(array $b, array $o): array {
-    foreach ([['n', 80], ['area', 80], ['uni', 120], ['spec', 120], ['field', 220], ['exp', 400], ['avail', 60], ['soc', 160], ['note', 220]] as [$k, $n])
+    foreach ([['n', 80], ['area', 80], ['uni', 120], ['spec', 120], ['field', 220], ['exp', 400], ['avail', 60], ['avt', 80], ['soc', 160], ['note', 220]] as [$k, $n])
         if (!isset($o[$k]) || array_key_exists($k, $b)) $o[$k] = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b[$k] ?? ''))), 0, $n);
     if (!isset($o['g']) || array_key_exists('g', $b)) $o['g'] = ($b['g'] ?? '') === 'm' ? 'm' : 'f';
+    foreach (['avf', 'avto'] as $k) if (!array_key_exists($k, $o) || array_key_exists($k, $b)) { $h = $b[$k] ?? null; $o[$k] = (is_numeric($h) && (int)$h >= 0 && (int)$h <= 24) ? (int)$h : null; }
     if (!isset($o['shift']) || array_key_exists('shift', $b)) $o['shift'] = in_array($b['shift'] ?? '', ['a', 'b'], true) ? $b['shift'] : '';
     if (!isset($o['ph']) || array_key_exists('ph', $b)) $o['ph'] = norm_ph((string)($b['ph'] ?? ''));
     if (!array_key_exists('age', $o) || array_key_exists('age', $b)) {
@@ -417,7 +418,7 @@ if ($r === 'org-form') {
     $oid = org_find($S, $ph, $name);
     // نأخذ بس الحقول الي انكتبت (ما نمسح شي موجود)
     $in = [];
-    $keys = $r === 'org-form' ? ['area', 'uni', 'spec', 'field', 'exp', 'avail', 'soc', 'age'] : [];
+    $keys = $r === 'org-form' ? ['area', 'uni', 'spec', 'field', 'exp', 'avail', 'avt', 'avf', 'avto', 'soc', 'age'] : [];
     foreach ($keys as $k) { $v = trim((string)($b[$k] ?? '')); if ($v !== '') $in[$k] = $v; }
     if ($g !== '') $in['g'] = $g;
     if ($shift !== '') $in['shift'] = $shift;
