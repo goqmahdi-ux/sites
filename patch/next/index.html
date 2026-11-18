@@ -5373,6 +5373,17 @@ const st=document.createElement('style');st.textContent=`
  #teamP .tpKi{padding:10px}#teamP .tpKi .ic{display:none}#teamP .tpKi b{font-size:20px}
  #teamP .tpSeg.big button{font-size:13px;padding:7px 10px}#teamP #tpMode button{font-size:12px;padding:6px 8px}
 }
+#orgP .chips button.wa{background:#16a34a;color:#fff;border-color:#16a34a;display:inline-flex;align-items:center;gap:5px;font-weight:600}#orgP .chips button.wa b{background:rgba(255,255,255,.25);border-radius:99px;padding:0 7px}
+#orgM .waI{background:#f0fbf4;border:1px solid #cdeedb;border-radius:14px;padding:12px 14px;margin-bottom:10px}#orgM .waI b{font-size:22px;color:#15803d;margin-inline-end:6px}#orgM .waI small{display:block;color:#57534e;font-size:12.5px;margin-top:2px}
+#orgM textarea.inp{unicode-bidi:plaintext;min-height:150px;resize:vertical;line-height:1.7;font:inherit;font-size:14px}
+#orgM .waP{white-space:pre-wrap;unicode-bidi:plaintext;text-align:start;background:#e7f7ec;border-radius:14px 14px 4px 14px;padding:10px 12px;font-size:14px;line-height:1.7;color:#1c1917;margin-top:6px;max-height:220px;overflow:auto;border:1px solid #cdeedb}
+#orgM .waN{font-size:13px;color:#8a7f78;font-weight:600;margin-inline-start:6px}
+#orgM .waBar{height:8px;border-radius:9px;background:#f0ebe6;overflow:hidden;margin:4px 0 6px}#orgM .waBar i{display:block;height:100%;background:#16a34a;border-radius:9px;transition:width .3s}
+#orgM .waC{display:flex;align-items:center;gap:12px;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:12px;margin-top:10px}#orgM .waC.ok{border-color:#86d3a5;background:#f0fbf4}#orgM .waC b{display:block;font-size:17px}#orgM .waC small{display:block;color:#8a7f78;font-size:13px;text-align:right}#orgM .waC em{margin-inline-start:auto;font-style:normal;color:#15803d;font-weight:700;font-size:13px}#orgM .waC .tb{margin-top:4px}
+#orgM .waC .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:18px;background:#fbe6ef;color:#5a1238;flex:none}#orgM .waC .av.m{background:#1d1d1f;color:#fff}
+#orgM .waGo{background:#16a34a!important;border-color:#16a34a!important;color:#fff!important;font-size:16px;padding:13px;text-align:center;text-decoration:none}
+#orgM .waL{display:flex;flex-direction:column;max-height:200px;overflow:auto;border:1px solid rgba(0,0,0,.08);border-radius:12px;margin-top:12px}#orgM .waL button{font:inherit;font-size:13.5px;display:flex;align-items:center;gap:8px;text-align:start;border:0;border-bottom:1px solid rgba(0,0,0,.05);background:#fff;padding:8px 10px;cursor:pointer;color:#3a2a31}#orgM .waL button span{min-width:24px;color:#a8a29e;font-size:12px}#orgM .waL button i{margin-inline-start:auto;font-style:normal;color:#15803d;font-weight:700}#orgM .waL button.cur{background:#fbf3f6;font-weight:700}#orgM .waL button.ok{color:#15803d}
+#orgM .tb{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:7px;padding:2px 8px;background:#f6f3f0;color:#3a2a31}#orgM .tb i{width:9px;height:9px;border-radius:50%;display:inline-block}
 #orgM .sw{display:flex;gap:8px;flex-wrap:wrap}#orgM .sw button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);cursor:pointer}#orgM .sw button.on{box-shadow:0 0 0 3px #1a1216}
 #orgM .ml{max-height:240px;overflow:auto;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:4px 8px;margin-top:6px}#orgM .ml label{display:flex;align-items:center;gap:8px;margin:0;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:13.5px}#orgM .ml label small{margin-inline-start:auto;color:#8a7f78}
 #orgP .empty{grid-column:1/-1;text-align:center;color:#8a7f78;padding:40px}
@@ -5391,7 +5402,7 @@ const st=document.createElement('style');st.textContent=`
 document.head.appendChild(st);
 const P=document.createElement('div');P.id='orgP';P.setAttribute('role','dialog');P.setAttribute('aria-label','المنظمين');
 P.innerHTML=`<div class="opTop"><div><h2>المنظمين</h2><div class="opSub" id="opSub"></div></div><div class="opAct">
-<button class="btn primary" id="opAdd">+ إضافة منظم</button><button class="btn secondary" id="opZone">منطقة الحضور</button><button class="btn secondary" id="opTeams">الفرق وأماكنها</button><button class="btn secondary" id="opVote">نتائج التصويت</button><button class="btn secondary" id="opLink">روابط المنظمين</button><button class="btn secondary" id="opCsv">تصدير Excel</button><button class="btn secondary" id="opBk">نسخة احتياطية</button><button class="btn secondary" id="opClose">رجوع</button></div></div>
+<button class="btn primary" id="opAdd">+ إضافة منظم</button><button class="btn secondary" id="opZone">منطقة الحضور</button><button class="btn secondary" id="opTeams">الفرق وأماكنها</button><button class="btn secondary" id="opVote">نتائج التصويت</button><button class="btn secondary" id="opLink">روابط المنظمين</button><button class="btn secondary" id="opWa">مراسلة واتساب</button><button class="btn secondary" id="opCsv">تصدير Excel</button><button class="btn secondary" id="opBk">نسخة احتياطية</button><button class="btn secondary" id="opClose">رجوع</button></div></div>
 <div class="opBar"><input class="inp" id="opQ" type="search" placeholder="ابحث بالاسم أو الرقم أو السكن أو الجامعة"><div class="chips" id="opF"></div>
 <select class="os" id="opTeam" aria-label="الفريق"></select><select class="os" id="opFld" aria-label="المجال"><option value="">كل المجالات</option>${FIELDS.map(f=>`<option>${f}</option>`).join('')}</select></div><div class="opBar" style="padding-top:0"><span class="rl" style="font-weight:700">أيام الحضور:</span><div class="chips" id="opDays"></div></div>
 <div class="opList" id="opList"></div>`;
@@ -5413,17 +5424,20 @@ const wdn=d=>new Date(d+'T12:00').toLocaleDateString('ar-IQ',{weekday:'long'});
 const dayLbl=d=>wd(d)+' · '+dtype(d)+(d===D.today?' (اليوم)':'');
 function counts(){const c={all:D.orgs.length,in:0,out:0,acc:0,f:0,m:0,sa:0,sb:0,sn:0,fu:0,vt:0,vw:0,ad:0};D.orgs.forEach(o=>{(o.att||{})[day]?c.in++:c.out++;o.uid&&c.acc++;c[o.g==='m'?'m':'f']++;o.shift==='a'?c.sa++:o.shift==='b'?c.sb++:c.sn++;o.fu&&c.fu++;o.vote&&c.vt++;o.avt==='طول اليوم'&&c.ad++;vwarn(o)&&c.vw++});return c}
 const vwarn=o=>o.vote&&(o.vote.how==='name'||!o.vote.nameOk);
+function curL(){
+ const k=q.trim().replace(/[إأآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي'),nq=s=>String(s||'').replace(/[إأآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
+ return D.orgs.filter(o=>{const a=(o.att||{})[day];if(flt==='in'&&!a||flt==='out'&&a||flt==='acc'&&!o.uid||flt==='f'&&o.g==='m'||flt==='m'&&o.g!=='m'||flt==='sa'&&o.shift!=='a'||flt==='sb'&&o.shift!=='b'||flt==='sn'&&o.shift||flt==='fu'&&!o.fu||flt==='vw'&&!vwarn(o)||flt==='ad'&&o.avt!=='طول اليوم')return!1;if(fld&&!String(o.field||'').includes(fld))return!1;if(tf&&(tf==='none'?teamOf(o.id):(teamOf(o.id)||{}).id!==tf))return!1;
+  if(k){const h=nq([o.n,o.ph,o.area,o.uni,o.spec,o.field,o.soc].join(' '));if(!h.includes(k)&&!String(o.ph||'').includes(k.replace(/\D/g,'')||'§'))return!1}return!0})
+  .sort((a,b)=>{const x=!!(a.att||{})[day],y=!!(b.att||{})[day];return(y-x)||String(a.n).localeCompare(String(b.n),'ar')});
+}
 function render(){
  if(!day||!days().includes(day))day=D.today;
  const per=d=>D.orgs.filter(o=>(o.att||{})[d]).length;
  $('#opTeam').innerHTML=`<option value="">كل الفرق</option>${(D.teams||[]).map(t=>`<option value="${t.id}"${tf===t.id?' selected':''}>${esc(t.n)} (${t.m.length})</option>`).join('')}<option value="none"${tf==='none'?' selected':''}>بدون فريق</option>`;if(P2.classList.contains('on'))tRender();
  $('#opDays').innerHTML=days().map(d=>`<button data-d="${d}" class="${d===day?'on ':''}${dtype(d)==='تدريب'?'tr':'ev'}">${wd(d)}<i>${dtype(d)}${d===D.today?' · اليوم':''}</i><b>${per(d)}</b></button>`).join('');
  const c=counts();$('#opSub').textContent=`${c.all} منظم · حضور التدريب: ${days().filter(d=>dtype(d)==='تدريب').map(d=>wdn(d)+': '+per(d)).join('، ')} · حضور التنظيم: ${days().filter(d=>dtype(d)==='تنظيم').map(d=>wdn(d)+': '+per(d)).join('، ')} · عندهم دخول للنظام ${c.acc} · صوّتوا ${c.vt} (الأولى ${c.sa}، الثانية ${c.sb})${(D.loose||[]).length?' · أصوات مو مربوطة '+D.loose.length:''} · حدّثوا معلوماتهم ${c.fu}`+(D.zone&&D.zone.on?'':' · منطقة الحضور غير مفعّلة');
- $('#opF').innerHTML=[['all','الكل',c.all],['in','حضروا '+wdn(day),c.in],['out','ما حضروا '+wdn(day),c.out],['acc','عندهم دخول',c.acc],['f','إناث',c.f],['m','ذكور',c.m],['sa','الوجبة الأولى',c.sa],['sb','الوجبة الثانية',c.sb],['sn','ما صوّتوا',c.sn],['fu','حدّثوا معلوماتهم',c.fu],['ad','متفرغين طول اليوم',c.ad],['vw','تنبيهات التصويت',c.vw]].map(([k,l,n])=>`<button data-f="${k}" class="${flt===k?'on':''}">${l}<b>${n}</b></button>`).join('');
- const k=q.trim().replace(/[إأآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي'),nq=s=>String(s||'').replace(/[إأآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
- const L=D.orgs.filter(o=>{const a=(o.att||{})[day];if(flt==='in'&&!a||flt==='out'&&a||flt==='acc'&&!o.uid||flt==='f'&&o.g==='m'||flt==='m'&&o.g!=='m'||flt==='sa'&&o.shift!=='a'||flt==='sb'&&o.shift!=='b'||flt==='sn'&&o.shift||flt==='fu'&&!o.fu||flt==='vw'&&!vwarn(o)||flt==='ad'&&o.avt!=='طول اليوم')return!1;if(fld&&!String(o.field||'').includes(fld))return!1;if(tf&&(tf==='none'?teamOf(o.id):(teamOf(o.id)||{}).id!==tf))return!1;
-  if(k){const h=nq([o.n,o.ph,o.area,o.uni,o.spec,o.field,o.soc].join(' '));if(!h.includes(k)&&!String(o.ph||'').includes(k.replace(/\D/g,'')||'§'))return!1}return!0})
-  .sort((a,b)=>{const x=!!(a.att||{})[day],y=!!(b.att||{})[day];return(y-x)||String(a.n).localeCompare(String(b.n),'ar')});
+ $('#opF').innerHTML=[['all','الكل',c.all],['in','حضروا '+wdn(day),c.in],['out','ما حضروا '+wdn(day),c.out],['acc','عندهم دخول',c.acc],['f','إناث',c.f],['m','ذكور',c.m],['sa','الوجبة الأولى',c.sa],['sb','الوجبة الثانية',c.sb],['sn','ما صوّتوا',c.sn],['fu','حدّثوا معلوماتهم',c.fu],['ad','متفرغين طول اليوم',c.ad],['vw','تنبيهات التصويت',c.vw]].map(([k,l,n])=>`<button data-f="${k}" class="${flt===k?'on':''}">${l}<b>${n}</b></button>`).join('')+`<button data-wa="1" class="wa" title="رسالة واتساب لكل الي بالقائمة، واحد واحد"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>راسل الي بالقائمة<b>${curL().filter(o=>waNum(o.ph).length>=11).length}</b></button>`;
+ const L=curL();
  $('#opList').innerHTML=L.length?L.map(o=>{const a=(o.att||{})[day],tags=String(o.field||'').split(/[,،]/).map(s=>s.trim()).filter(Boolean);
   return`<div class="oc" data-id="${o.id}"><div class="ocH"><span class="av ${o.g==='m'?'m':''}" aria-hidden="true">${esc(String(o.n).trim()[0]||'؟')}</span><div><b>${esc(o.n)}</b><small>${o.g==='m'?'ذكر':'أنثى'}${o.age?' · '+o.age+' سنة':''}${o.area?' · '+esc(o.area):''}</small></div>
   <span class="pill ${a?'in':''}">${a?'حضر '+hhmm(a.t)+(a.by&&a.by!=='gps'?' (يدوي)':''):day>D.today?'بعده':'ما حضر'}</span></div>
@@ -5438,7 +5452,7 @@ setInterval(()=>{if(P.classList.contains('on')&&!M.classList.contains('on')&&!do
 const apply=j=>{if(j&&j.orgs){D=j;render()}};
 async function open(){P.classList.add('on');const c=$('#closeAdmin');c&&$('#drawer').classList.contains('open')&&c.click();render();await load()}
 $('#opClose').onclick=()=>P.classList.remove('on');
-$('#opQ').oninput=e=>{q=e.target.value;render()};$('#opF').onclick=e=>{const b=e.target.closest('button');if(b){flt=b.dataset.f;render()}};
+$('#opQ').oninput=e=>{q=e.target.value;render()};$('#opF').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.wa){waQ();return}flt=b.dataset.f;render()};
 $('#opFld').onchange=e=>{fld=e.target.value;render()};$('#opTeam').onchange=e=>{tf=e.target.value;render()};$('#opDays').onclick=e=>{const b=e.target.closest('button');if(b){day=b.dataset.d;render()}};
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(M.classList.contains('on')){closeM();e.stopPropagation()}else if(P2.classList.contains('on')){if(tSel){tSel='';tRender()}else P2.classList.remove('on');e.stopPropagation()}else if(P.classList.contains('on')){P.classList.remove('on');e.stopPropagation()}},!0);
 const byId=id=>D.orgs.find(o=>o.id===id);
@@ -5528,6 +5542,57 @@ const LINKS=[{k:'in',t:'تسجيل الحضور بالجامعة',u:ORG_URL,d:'�
 function link(){
  openM(`<h3>روابط المنظمين</h3>${LINKS.map(l=>`<div class="lk"><b>${l.t}</b><div class="note">${l.d}${l.k==='in'&&!(D.zone&&D.zone.on)?' <b style="display:inline;color:#b3261e">منطقة الحضور بعدها مو مفعّلة.</b>':''}</div><code>${esc(l.u)}</code><div class="row"><a class="btn primary" target="_blank" rel="noopener" href="${wa('',l.m+l.u)}">واتساب</a><button class="btn secondary" data-c="${l.k}">نسخ</button><a class="btn secondary" target="_blank" rel="noopener" href="${l.u}">فتح</a></div></div>`).join('')}<div class="row"><button class="btn secondary" id="lX">إغلاق</button></div>`);
  mc.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const l=LINKS.find(x=>x.k===b.dataset.c);navigator.clipboard&&navigator.clipboard.writeText(l.u).then(()=>toast('انتسخ الرابط'),()=>{})});mc.querySelector('#lX').onclick=closeM}
+/* مراسلة واتساب: رسالة وحدة لكل الي بالفلتر، وتفتح واتساب واحد واحد */
+const FLBL={all:'الكل',in:'حضروا',out:'ما حضروا',acc:'عندهم دخول',f:'إناث',m:'ذكور',sa:'الوجبة الأولى',sb:'الوجبة الثانية',sn:'ما صوّتوا',fu:'حدّثوا معلوماتهم',ad:'متفرغين طول اليوم',vw:'تنبيهات التصويت'};
+const waNum=ph=>{let d=String(ph||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);if(d.startsWith('964'))return d;if(d.startsWith('0'))return '964'+d.slice(1);if(d.length===10&&d[0]==='7')return '964'+d;return d};
+const fname=n=>{const w=String(n||'').trim().split(/\s+/);return w[0]==='عبد'&&w[1]?w[0]+' '+w[1]:(w[0]||'')};
+const WTPL=[
+ {k:'vote',l:'رابط التصويت',t:()=>`السلام عليكم {الاسم}\nيرجى اختيار وقت حضورك لتنظيم مؤتمر السيدة خديجة الكبرى (ع):\nالوجبة الأولى من 12 الظهر إلى 6 المساء، أو الوجبة الثانية من 4 العصر إلى 10 الليل\n${ORG_URL}vote/`},
+ {k:'info',l:'رابط المعلومات',t:()=>`السلام عليكم {الاسم}\nيرجى إكمال معلوماتك كمنظم لمؤتمر السيدة خديجة الكبرى (ع) عبر الرابط:\n${ORG_URL}info/`},
+ {k:'in',l:'رابط الحضور',t:()=>`السلام عليكم {الاسم}\nرابط تسجيل حضور المنظمين لمؤتمر السيدة خديجة الكبرى (ع)\nافتحه من داخل الجامعة واكتب رقم هاتفك:\n${ORG_URL}`},
+ {k:'team',l:'فريقه ومكانه',t:()=>`السلام عليكم {الاسم}\nأنت ضمن {الفريق}\nالمكان: {المكان}\nالمهمة: {المهمة}\nالمسؤول: {المسؤول}`},
+ {k:'free',l:'رسالة حرة',t:()=>`السلام عليكم {الاسم}\n`}];
+function waFill(txt,o){const t=teamOf(o.id);return String(txt).replace(/\{الاسم\}/g,fname(o.n)).replace(/\{الاسم الكامل\}/g,o.n||'')
+ .replace(/\{الفريق\}/g,t?t.n:'فريق التنظيم').replace(/\{المكان\}/g,t?(t.place||(typeof TAR!=='undefined'&&TAR[tAr(t)]?TAR[tAr(t)].n:'')):'يتحدد لاحقاً').replace(/\{المهمة\}/g,t&&t.task?t.task:'تتبلغ بيها من المسؤول').replace(/\{المسؤول\}/g,t&&t.lead?nm(t.lead):'الإدارة').replace(/\{الوجبة\}/g,o.shift?SHS[o.shift]:'ما محددة')}
+const waKey=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return 'ks-wa-'+(h>>>0).toString(36)};
+const waGet=k=>{try{return new Set(JSON.parse(localStorage.getItem(k)||'[]'))}catch(e){return new Set()}};
+const waSet=(k,s)=>{try{localStorage.setItem(k,JSON.stringify([...s]))}catch(e){}};
+function waQ(){const all=curL(),R=all.filter(o=>waNum(o.ph).length>=11),miss=all.length-R.length;
+ if(!all.length){toast('ماكو منظمين بهذا الفلتر',1);return}
+ const desc=[FLBL[flt]||'الكل',(flt==='in'||flt==='out')?wdn(day):'',tf?(tf==='none'?'بدون فريق':((D.teams||[]).find(t=>t.id===tf)||{}).n):'',fld,q.trim()?'بحث: '+q.trim():''].filter(Boolean).join(' · ');
+ let tk=flt==='sn'?'vote':(flt==='out'||flt==='in')?'in':(tf&&tf!=='none')?'team':flt==='fu'?'free':'info',txt=WTPL.find(x=>x.k===tk).t(),i=0,sent=new Set(),key='';
+ const compose=()=>{openM(`<h3>مراسلة واتساب</h3>
+  <div class="waI"><b>${R.length}</b> منظم راح توصلهم الرسالة<small>الفلتر: ${esc(desc)}${miss?` · ${miss} بدون رقم ينشالون`:''}</small></div>
+  <label>نوع الرسالة<div class="tpArs" id="wK">${WTPL.map(x=>`<button type="button" data-k="${x.k}" style="--c:#5a1238" class="${x.k===tk?'on':''}">${x.l}</button>`).join('')}</div></label>
+  <label>الرسالة<textarea class="inp" id="wT" rows="7" dir="rtl">${esc(txt)}</textarea></label>
+  <div class="note">تقدر تكتب {الاسم} وينكتب اسم كل منظم لحاله. وهم: {الاسم الكامل}، {الفريق}، {المكان}، {المهمة}، {المسؤول}، {الوجبة}</div>
+  <label>شكلها عند ${esc(R[0]?R[0].n:'')}<div class="waP" id="wP"></div></label>
+  <div class="err" id="wE"></div>
+  <div class="row"><button class="btn primary" id="wGo">ابدأ: افتح واتساب واحد واحد</button><button class="btn secondary" id="wX">إغلاق</button></div>`);
+  const pv=()=>{txt=mc.querySelector('#wT').value;mc.querySelector('#wP').textContent=R[0]?waFill(txt,R[0]):''};pv();
+  mc.querySelector('#wT').oninput=pv;
+  mc.querySelector('#wK').onclick=e=>{const b=e.target.closest('button');if(!b)return;tk=b.dataset.k;mc.querySelectorAll('#wK button').forEach(x=>x.classList.toggle('on',x===b));mc.querySelector('#wT').value=WTPL.find(x=>x.k===tk).t();pv()};
+  mc.querySelector('#wX').onclick=closeM;
+  mc.querySelector('#wGo').onclick=()=>{txt=mc.querySelector('#wT').value;if(!txt.trim()){mc.querySelector('#wE').textContent='اكتب الرسالة';return}if(!R.length){mc.querySelector('#wE').textContent='ماكو أرقام بهذا الفلتر';return}
+   key=waKey(txt);sent=waGet(key);i=Math.max(0,R.findIndex(o=>!sent.has(o.id)));queue()}};
+ const queue=()=>{const o=R[i],m=waFill(txt,o),t=teamOf(o.id),done=R.filter(x=>sent.has(x.id)).length,all_=done===R.length;
+  openM(`<h3>مراسلة واتساب <small class="waN">${i+1} من ${R.length}</small></h3>
+  <div class="waBar"><i style="width:${done/R.length*100}%"></i></div><div class="note">انبعثت لـ ${done} من ${R.length}${all_?' · خلصت الكل ✓':''}</div>
+  <div class="waC${sent.has(o.id)?' ok':''}"><span class="av ${o.g==='m'?'m':''}">${esc(String(o.n).trim()[0]||'؟')}</span><div><b>${esc(o.n)}</b><small dir="ltr">${esc(o.ph)}</small>${t?`<span class="tb"><i style="background:${t.color}"></i>${esc(t.n)}</span>`:''}</div>${sent.has(o.id)?'<em>انبعثت ✓</em>':''}</div>
+  <div class="waP">${esc(m)}</div>
+  <div class="row"><a class="btn primary waGo" id="wOpen" target="_blank" rel="noopener" href="https://wa.me/${waNum(o.ph)}?text=${encodeURIComponent(m)}">افتح واتساب ${esc(fname(o.n))}</a></div>
+  <div class="row"><button class="btn secondary" id="wPrev"${i?'':' disabled'}>السابق</button><button class="btn secondary" id="wSkip">${i<R.length-1?'تخطي':'آخر واحد'}</button></div>
+  <div class="waL" id="wL">${R.map((x,j)=>`<button type="button" data-j="${j}" class="${j===i?'cur ':''}${sent.has(x.id)?'ok':''}"><span>${j+1}</span>${esc(x.n)}${sent.has(x.id)?'<i>✓</i>':''}</button>`).join('')}</div>
+  <div class="row"><button class="btn secondary" id="wBack">تعديل الرسالة</button><button class="btn secondary" id="wReset">صفّر المبعوث</button><button class="btn secondary" id="wX">إنهاء</button></div>`);
+  const cur=mc.querySelector('#wL .cur');cur&&cur.scrollIntoView({block:'nearest'});
+  mc.querySelector('#wOpen').onclick=()=>{sent.add(o.id);waSet(key,sent);setTimeout(()=>{const n=R.findIndex((x,j)=>j>i&&!sent.has(x.id));if(n>=0)i=n;else if(i<R.length-1)i++;queue()},400)};
+  mc.querySelector('#wPrev').onclick=()=>{if(i>0){i--;queue()}};
+  mc.querySelector('#wSkip').onclick=()=>{if(i<R.length-1){i++;queue()}};
+  mc.querySelector('#wL').onclick=e=>{const b=e.target.closest('[data-j]');if(b){i=+b.dataset.j;queue()}};
+  mc.querySelector('#wBack').onclick=compose;
+  mc.querySelector('#wReset').onclick=()=>{if(confirm('ترجع كلهم مو مبعوث إلهم؟')){sent=new Set();waSet(key,sent);i=0;queue()}};
+  mc.querySelector('#wX').onclick=closeM};
+ compose()}
 function votes(){const c=counts(),L=D.loose||[],W=D.orgs.filter(vwarn),by=k=>D.orgs.filter(o=>o.shift===k).sort((a,b)=>String(a.n).localeCompare(String(b.n),'ar'));
  const row=o=>`<div class="vl"><span>${esc(o.n)} <small>${o.g==='m'?'ذكر':'أنثى'}</small></span><small dir="ltr">${esc(o.ph||'')}</small></div>`;
  openM(`<h3>نتائج التصويت على وقت الحضور</h3><div class="note">تنحسب من جديد كل ما تنفتح أو تتحدث القائمة: نقارن رقم المصوّت واسمه ويا قائمة المنظمين.</div>
@@ -5805,7 +5870,7 @@ function team(t){const n=!t;t=t?{...t,m:[...t.m],ar:tAr(t)}:{n:'',color:TCOL[(D.
   try{const j=await api('teams/save',body);apply(j);tSel=j.tid||'';closeM();toast(n?'انعمل الفريق':'انحفظ الفريق');P2.classList.add('on');const v=TAR[t.ar].v;v!==tView?tSetView(v):tRender()}catch(e){mc.querySelector('#tErr').textContent=e.message}};
 }
 $('#opTeams').onclick=()=>{P2.classList.add('on');tRender();setTimeout(()=>tCtr(tView==='s'?$('#tpSiteW'):$('#tpHallW')),30)};
-$('#opAdd').onclick=()=>edit(null);$('#opZone').onclick=zone;$('#opLink').onclick=link;$('#opVote').onclick=votes;$('#opCsv').onclick=csv;$('#opBk').onclick=backup;
+$('#opAdd').onclick=()=>edit(null);$('#opZone').onclick=zone;$('#opLink').onclick=link;$('#opWa').onclick=waQ;$('#opVote').onclick=votes;$('#opCsv').onclick=csv;$('#opBk').onclick=backup;
 /* زر بالإعدادات (للمدير) */
 const ico='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.6-.3 4.6 1.2 5 4.3"/></svg>';
 const dw=$('#drawer .dScroll');if(dw){const d=document.createElement('div');d.className='orgDrawer';d.innerHTML='<button class="btn secondary block" type="button" id="orgBtn">'+ico+'<span>المنظمين</span></button><p class="help">قائمة المنظمين، الدخول والصلاحيات برمز تلقائي، وحضورهم من داخل الجامعة.</p>';
