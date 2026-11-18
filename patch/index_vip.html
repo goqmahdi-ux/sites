@@ -5241,6 +5241,7 @@ const tok=()=>{try{return JSON.parse(localStorage.getItem('ks-token')||'null')}c
 async function api(r,b={}){const res=await fetch('api.php?r='+r,{method:'POST',headers:{'Content-Type':'application/json','X-Token':tok()||''},body:JSON.stringify(b)});let j={};try{j=await res.json()}catch(e){}if(!res.ok)throw new Error(j.msg||'صار خطأ، حاول مرة ثانية');return j}
 const PERMS=[['checkin','تسجيل الضيوف'],['print','الطباعة'],['reprint','إعادة الطباعة'],['move','نقل ضيف لكرسي ثاني'],['free','تفريغ الكراسي'],['guests','إدارة قائمة الضيوف'],['export','تنزيل الكشف']];
 const PRE={reg:{l:'استقبال وتسجيل',d:'يسجّل الضيوف ويطبع الستكرات',role:'staff',p:['checkin','print','reprint']},sup:{l:'مشرف',d:'كل صلاحيات الاستقبال مع النقل والتفريغ والقائمة',role:'staff',p:['checkin','print','reprint','move','free','guests','export']},view:{l:'منظم بدون تسجيل',d:'يدخل ويشوف القاعة والكراسي بس',role:'staff',p:[]},admin:{l:'مدير',d:'كل الصلاحيات',role:'admin',p:PERMS.map(x=>x[0])}};
+const SHIFT={a:'12 ظهراً – 6 مساءً',b:'4 مساءً – 10 ليلاً'},SHS={a:'الوجبة الأولى',b:'الوجبة الثانية'};
 const FIELDS=['الاستقبال والتسجيل','إرشاد الضيوف','تنظيم القاعة والجلسات','التنسيق اللوجستي','التغطية الإعلامية والتصوير'];
 let D={orgs:[],zone:{},today:'',admins:[]},q='',flt='all',fld='',day='';
 const st=document.createElement('style');st.textContent=`
@@ -5262,6 +5263,8 @@ const st=document.createElement('style');st.textContent=`
 #orgP .tags{display:flex;gap:4px;flex-wrap:wrap}#orgP .tags span{font-size:11.5px;background:#f6eef2;color:#5a1238;border-radius:7px;padding:2px 7px}
 #orgP .ocF{display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-top:1px dashed rgba(0,0,0,.08);padding-top:8px}
 #orgP .ocF .btn{padding:7px 11px;font-size:13px;min-height:0}#orgP .pin{font-weight:700;letter-spacing:.08em;color:#1f7a4a;background:#e3f4ea;border-radius:8px;padding:4px 8px;font-size:13px}#orgP .rl{font-size:12px;color:#8a7f78}
+#orgP .sh{font-size:11.5px;font-weight:700;border-radius:7px;padding:2px 8px;background:#efe6ff;color:#4b2a86}#orgP .sh.b{background:#ffe9d6;color:#8a4a12}#orgP .fu{font-size:11px;color:#1f7a4a;background:#e3f4ea;border-radius:7px;padding:2px 7px}
+#orgM .lk{border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:12px;margin-bottom:10px}#orgM .lk b{display:block;color:#5a1238;margin-bottom:2px}#orgM .lk code{display:block;font-size:12.5px;direction:ltr;text-align:left;word-break:break-all;background:#f6f3f0;border-radius:8px;padding:6px 8px;margin:6px 0}#orgM .lk .row{margin-top:6px}
 #orgP .empty{grid-column:1/-1;text-align:center;color:#8a7f78;padding:40px}
 #orgM{position:fixed;inset:0;z-index:70;background:rgba(20,8,14,.45);display:none;align-items:center;justify-content:center;padding:14px;direction:rtl}#orgM.on{display:flex}
 #orgM .mc{background:#fff;border-radius:18px;width:min(560px,100%);max-height:92vh;overflow:auto;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -5278,7 +5281,7 @@ const st=document.createElement('style');st.textContent=`
 document.head.appendChild(st);
 const P=document.createElement('div');P.id='orgP';P.setAttribute('role','dialog');P.setAttribute('aria-label','المنظمين');
 P.innerHTML=`<div class="opTop"><div><h2>المنظمين</h2><div class="opSub" id="opSub"></div></div><div class="opAct">
-<button class="btn primary" id="opAdd">+ إضافة منظم</button><button class="btn secondary" id="opZone">منطقة الحضور</button><button class="btn secondary" id="opLink">رابط تسجيل دخول المنظمين</button><button class="btn secondary" id="opClose">رجوع</button></div></div>
+<button class="btn primary" id="opAdd">+ إضافة منظم</button><button class="btn secondary" id="opZone">منطقة الحضور</button><button class="btn secondary" id="opLink">روابط المنظمين</button><button class="btn secondary" id="opCsv">تصدير Excel</button><button class="btn secondary" id="opClose">رجوع</button></div></div>
 <div class="opBar"><input class="inp" id="opQ" type="search" placeholder="ابحث بالاسم أو الرقم أو السكن أو الجامعة"><div class="chips" id="opF"></div>
 <select class="os" id="opFld" aria-label="المجال"><option value="">كل المجالات</option>${FIELDS.map(f=>`<option>${f}</option>`).join('')}</select><select class="os" id="opDay" aria-label="يوم الحضور"></select></div>
 <div class="opList" id="opList"></div>`;
@@ -5293,25 +5296,26 @@ const wa=(ph,msg)=>'https://wa.me/'+(ph?'964'+ph.replace(/^0/,''):'')+'?text='+e
 const roleOf=o=>!o.uid?'':o.role==='admin'?'مدير':(Object.values(PRE).find(p=>p.role==='staff'&&p.p.length===o.perms.length&&p.p.every(x=>o.perms.includes(x)))||{l:'صلاحيات مخصصة'}).l;
 const days=()=>{const s=new Set([D.today]);D.orgs.forEach(o=>Object.keys(o.att||{}).forEach(d=>s.add(d)));return[...s].sort().reverse()};
 const dayLbl=d=>d===D.today?'اليوم':new Date(d+'T12:00').toLocaleDateString('ar-IQ',{weekday:'long',day:'numeric',month:'long'});
-function counts(){const c={all:D.orgs.length,in:0,out:0,acc:0,f:0,m:0};D.orgs.forEach(o=>{(o.att||{})[day]?c.in++:c.out++;o.uid&&c.acc++;c[o.g==='m'?'m':'f']++});return c}
+function counts(){const c={all:D.orgs.length,in:0,out:0,acc:0,f:0,m:0,sa:0,sb:0,sn:0,fu:0};D.orgs.forEach(o=>{(o.att||{})[day]?c.in++:c.out++;o.uid&&c.acc++;c[o.g==='m'?'m':'f']++;o.shift==='a'?c.sa++:o.shift==='b'?c.sb++:c.sn++;o.fu&&c.fu++});return c}
 function render(){
  if(!day||!days().includes(day))day=D.today;
  $('#opDay').innerHTML=days().map(d=>`<option value="${d}"${d===day?' selected':''}>حضور ${dayLbl(d)}</option>`).join('');
- const c=counts();$('#opSub').textContent=`${c.all} منظم · حضر ${dayLbl(day)} ${c.in} · عندهم دخول للنظام ${c.acc}`+(D.zone&&D.zone.on?'':' · منطقة الحضور غير مفعّلة');
- $('#opF').innerHTML=[['all','الكل',c.all],['in','حضروا',c.in],['out','ما حضروا',c.out],['acc','عندهم دخول',c.acc],['f','إناث',c.f],['m','ذكور',c.m]].map(([k,l,n])=>`<button data-f="${k}" class="${flt===k?'on':''}">${l}<b>${n}</b></button>`).join('');
+ const c=counts();$('#opSub').textContent=`${c.all} منظم · حضر ${dayLbl(day)} ${c.in} · عندهم دخول للنظام ${c.acc} · صوّتوا على الوقت ${c.sa+c.sb} (الأولى ${c.sa}، الثانية ${c.sb}) · حدّثوا معلوماتهم ${c.fu}`+(D.zone&&D.zone.on?'':' · منطقة الحضور غير مفعّلة');
+ $('#opF').innerHTML=[['all','الكل',c.all],['in','حضروا',c.in],['out','ما حضروا',c.out],['acc','عندهم دخول',c.acc],['f','إناث',c.f],['m','ذكور',c.m],['sa','الوجبة الأولى',c.sa],['sb','الوجبة الثانية',c.sb],['sn','ما صوّتوا',c.sn],['fu','حدّثوا معلوماتهم',c.fu]].map(([k,l,n])=>`<button data-f="${k}" class="${flt===k?'on':''}">${l}<b>${n}</b></button>`).join('');
  const k=q.trim().replace(/[إأآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي'),nq=s=>String(s||'').replace(/[إأآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
- const L=D.orgs.filter(o=>{const a=(o.att||{})[day];if(flt==='in'&&!a||flt==='out'&&a||flt==='acc'&&!o.uid||flt==='f'&&o.g==='m'||flt==='m'&&o.g!=='m')return!1;if(fld&&!String(o.field||'').includes(fld))return!1;
-  if(k){const h=nq([o.n,o.ph,o.area,o.uni,o.field,o.soc].join(' '));if(!h.includes(k)&&!String(o.ph||'').includes(k.replace(/\D/g,'')||'§'))return!1}return!0})
+ const L=D.orgs.filter(o=>{const a=(o.att||{})[day];if(flt==='in'&&!a||flt==='out'&&a||flt==='acc'&&!o.uid||flt==='f'&&o.g==='m'||flt==='m'&&o.g!=='m'||flt==='sa'&&o.shift!=='a'||flt==='sb'&&o.shift!=='b'||flt==='sn'&&o.shift||flt==='fu'&&!o.fu)return!1;if(fld&&!String(o.field||'').includes(fld))return!1;
+  if(k){const h=nq([o.n,o.ph,o.area,o.uni,o.spec,o.field,o.soc].join(' '));if(!h.includes(k)&&!String(o.ph||'').includes(k.replace(/\D/g,'')||'§'))return!1}return!0})
   .sort((a,b)=>{const x=!!(a.att||{})[day],y=!!(b.att||{})[day];return(y-x)||String(a.n).localeCompare(String(b.n),'ar')});
  $('#opList').innerHTML=L.length?L.map(o=>{const a=(o.att||{})[day],tags=String(o.field||'').split(/[,،]/).map(s=>s.trim()).filter(Boolean);
   return`<div class="oc" data-id="${o.id}"><div class="ocH"><span class="av ${o.g==='m'?'m':''}" aria-hidden="true">${esc(String(o.n).trim()[0]||'؟')}</span><div><b>${esc(o.n)}</b><small>${o.g==='m'?'ذكر':'أنثى'}${o.age?' · '+o.age+' سنة':''}${o.area?' · '+esc(o.area):''}</small></div>
   <span class="pill ${a?'in':''}">${a?'حضر '+hhmm(a.t)+(a.by&&a.by!=='gps'?' (يدوي)':''):'ما حضر'}</span></div>
   <div class="ocB">${o.ph?`<div><a href="tel:${esc(o.ph)}">${esc(o.ph)}</a> · <a href="${wa(o.ph,'')}" target="_blank" rel="noopener">واتساب</a></div>`:'<div class="rl">بدون رقم</div>'}
-  ${o.uni?`<div>${esc(o.uni)}</div>`:''}${tags.length?`<div class="tags">${tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}</div>
+  <div class="tags">${o.shift?`<span class="sh ${o.shift}" title="${SHIFT[o.shift]}">${SHS[o.shift]}</span>`:''}${o.fu?'<span class="fu">حدّث معلوماته</span>':''}</div>${o.uni||o.spec?`<div>${esc([o.uni,o.spec].filter(Boolean).join(' · '))}</div>`:''}${tags.length?`<div class="tags">${tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}</div>
   <div class="ocF">${o.uid?`<span class="pin" title="رمز الدخول">${esc(o.pin||'••••••')}</span><span class="rl">${esc(roleOf(o))}</span><button class="btn secondary" data-a="acc">الصلاحية</button>`:`<button class="btn primary" data-a="acc">إعطاء دخول</button>`}
   <button class="btn secondary" data-a="edit">تعديل</button><button class="btn secondary" data-a="mark">${a?'إلغاء الحضور':'حضور يدوي'}</button></div></div>`}).join(''):'<div class="empty">ماكو منظمين بهذا البحث</div>';
 }
 const load=async()=>{try{D=await api('orgs/list');render()}catch(e){toast(e.message,1)}};
+setInterval(()=>{if(P.classList.contains('on')&&!M.classList.contains('on')&&!document.hidden)api('orgs/list').then(j=>{D=j;render()}).catch(()=>{})},20000);
 const apply=j=>{if(j&&j.orgs){D=j;render()}};
 async function open(){P.classList.add('on');const c=$('#closeAdmin');c&&$('#drawer').classList.contains('open')&&c.click();render();await load()}
 $('#opClose').onclick=()=>P.classList.remove('on');
@@ -5323,21 +5327,24 @@ $('#opList').onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return
  if(b.dataset.a==='edit')edit(o);else if(b.dataset.a==='acc')access(o);
  else if(b.dataset.a==='mark'){const on=!(o.att||{})[day];if(!on&&!confirm('إلغاء حضور '+o.n+'؟'))return;try{apply(await api('orgs/mark',{id:o.id,day,on}))}catch(x){toast(x.message,1)}}};
 /* إضافة وتعديل */
-function edit(o){const n=!o;o=o||{g:'f'};let g=o.g==='m'?'m':'f';const sel=new Set(String(o.field||'').split(/[,،]/).map(s=>s.trim()).filter(Boolean));
+function edit(o){const n=!o;o=o||{g:'f'};let g=o.g==='m'?'m':'f',sh=o.shift||'';const sel=new Set(String(o.field||'').split(/[,،]/).map(s=>s.trim()).filter(Boolean));
  openM(`<h3>${n?'إضافة منظم':'تعديل المنظم'}</h3><label>الاسم الثلاثي<input class="inp" id="oN" maxlength="80" value="${esc(o.n||'')}"></label>
  <label>الجنس<div class="seg2" id="oG"><button type="button" data-g="f">أنثى</button><button type="button" data-g="m">ذكر</button></div></label>
  <div class="g2"><label>رقم الهاتف (واتساب)<input class="inp" id="oPh" inputmode="tel" maxlength="20" dir="ltr" value="${esc(o.ph||'')}" placeholder="07xxxxxxxxx"></label><label>العمر<input class="inp" id="oAge" inputmode="numeric" maxlength="3" value="${esc(o.age||'')}"></label></div>
  <div class="g2"><label>منطقة السكن<input class="inp" id="oArea" maxlength="80" value="${esc(o.area||'')}"></label><label>الجامعة أو المؤسسة<input class="inp" id="oUni" maxlength="120" value="${esc(o.uni||'')}"></label></div>
+ <label>الاختصاص<input class="inp" id="oSpec" maxlength="120" value="${esc(o.spec||'')}" placeholder="مثلاً: طب، تمريض، إعلام"></label>
+ <label>وقت الحضور<div class="seg2" id="oSh"><button type="button" data-s="a">12 ظهراً – 6 مساءً</button><button type="button" data-s="b">4 مساءً – 10 ليلاً</button><button type="button" data-s="">ما محدد</button></div></label>
  <label>مجال المساهمة<div class="tg" id="oFld">${FIELDS.map(f=>`<button type="button" class="${sel.has(f)?'on':''}">${f}</button>`).join('')}</div></label>
  <div class="g2"><label>التفرغ يومي المؤتمر<input class="inp" id="oAv" maxlength="60" value="${esc(o.avail||'')}"></label><label>حساب التواصل<input class="inp" id="oSoc" maxlength="160" dir="ltr" value="${esc(o.soc||'')}"></label></div>
- <label>خبرة سابقة أو ملاحظات<input class="inp" id="oExp" maxlength="220" value="${esc(o.exp||'')}"></label>
+ <label>خبرة سابقة أو ملاحظات<input class="inp" id="oExp" maxlength="400" value="${esc(o.exp||'')}"></label>
  <div class="err" id="oErr"></div><div class="row"><button class="btn primary" id="oSave">حفظ</button><button class="btn secondary" id="oCancel">إلغاء</button>${n?'':'<button class="btn danger" id="oDel">حذف المنظم</button>'}</div>`);
- const sg=()=>mc.querySelectorAll('#oG button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));sg();
+ const sg=()=>{mc.querySelectorAll('#oG button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));mc.querySelectorAll('#oSh button').forEach(b=>b.classList.toggle('on',b.dataset.s===sh))};sg();
+ mc.querySelector('#oSh').onclick=e=>{const b=e.target.closest('button');if(b){sh=b.dataset.s;sg()}};
  mc.querySelector('#oG').onclick=e=>{const b=e.target.closest('button');if(b){g=b.dataset.g;sg()}};
  mc.querySelector('#oFld').onclick=e=>{const b=e.target.closest('button');if(b){b.classList.toggle('on');b.classList.contains('on')?sel.add(b.textContent):sel.delete(b.textContent)}};
  mc.querySelector('#oCancel').onclick=closeM;
  mc.querySelector('#oSave').onclick=async()=>{const v=id=>mc.querySelector(id).value.trim();const extra=[...sel].filter(x=>!FIELDS.includes(x));
-  const body={id:o.id||'',n:v('#oN'),g,ph:v('#oPh'),age:v('#oAge'),area:v('#oArea'),uni:v('#oUni'),field:[...FIELDS.filter(f=>sel.has(f)),...extra].join(', '),avail:v('#oAv'),soc:v('#oSoc'),exp:v('#oExp')};
+  const body={id:o.id||'',n:v('#oN'),g,ph:v('#oPh'),age:v('#oAge'),area:v('#oArea'),uni:v('#oUni'),spec:v('#oSpec'),shift:sh,field:[...FIELDS.filter(f=>sel.has(f)),...extra].join(', '),avail:v('#oAv'),soc:v('#oSoc'),exp:v('#oExp')};
   if(!body.n){mc.querySelector('#oErr').textContent='اكتب اسم المنظم';return}
   try{const j=await api('orgs/save',body);apply(j);closeM();toast(n?'انضاف المنظم':'انحفظ التعديل');if(n){const x=byId(j.id);x&&confirm('تريد تعطيه دخول للنظام هسه؟')&&access(x)}}catch(e){mc.querySelector('#oErr').textContent=e.message}};
  const d=mc.querySelector('#oDel');d&&(d.onclick=async()=>{if(!confirm('حذف '+o.n+' من قائمة المنظمين'+(o.uid?' وسحب دخوله للنظام':'')+'؟'))return;try{apply(await api('orgs/delete',{id:o.id}));closeM();toast('انحذف المنظم')}catch(e){mc.querySelector('#oErr').textContent=e.message}});
@@ -5395,12 +5402,18 @@ function zone(){const z=D.zone||{};let on=!!z.on,lat=z.lat,lng=z.lng,mode=(z.pol
   try{apply(await api('zone/set',b));closeM();toast('انحفظت منطقة الحضور')}catch(e){mc.querySelector('#zErr').textContent=e.message}};
 }
 
-function link(){const msg=`رابط تسجيل دخول المنظمين لمؤتمر السيدة خديجة الكبرى (ع)\nافتحه من داخل الجامعة واكتب رقم هاتفك:\n${ORG_URL}`;
- openM(`<h3>رابط تسجيل دخول المنظمين</h3><p class="note">المنظم يفتح الرابط من تلفونه داخل الجامعة، يكتب رقمه، وحضوره يتسجّل ويطلع هنا مباشرة.${D.zone&&D.zone.on?'':' <b style="color:#b3261e">منطقة الحضور بعدها مو مفعّلة.</b>'}</p>
- <div class="bigPin" style="font-size:16px;letter-spacing:0;word-break:break-all">${esc(ORG_URL)}</div>
- <div class="row"><a class="btn primary" target="_blank" rel="noopener" href="${wa('',msg)}">مشاركة بالواتساب</a><button class="btn secondary" id="lCopy">نسخ الرابط</button><a class="btn secondary" target="_blank" rel="noopener" href="${ORG_URL}">فتح الصفحة</a><button class="btn secondary" id="lX">إغلاق</button></div>`);
- mc.querySelector('#lCopy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(ORG_URL).then(()=>toast('انتسخ الرابط'),()=>{})};mc.querySelector('#lX').onclick=closeM}
-$('#opAdd').onclick=()=>edit(null);$('#opZone').onclick=zone;$('#opLink').onclick=link;
+const LINKS=[{k:'in',t:'تسجيل الحضور بالجامعة',u:ORG_URL,d:'يفتحه المنظم من داخل الجامعة ويكتب رقمه، وحضوره يتسجّل هنا.',m:'رابط تسجيل حضور المنظمين لمؤتمر السيدة خديجة الكبرى (ع)\nافتحه من داخل الجامعة واكتب رقم هاتفك:\n'},
+ {k:'info',t:'تحديث معلومات المنظمين',u:ORG_URL+'info/',d:'يكتب رقمه ومعلوماته. إذا موجود تنضاف المعلومات الجديدة عليه، وإذا مو موجود ينضاف منظم جديد.',m:'السلام عليكم، يرجى إكمال معلوماتك كمنظم لمؤتمر السيدة خديجة الكبرى (ع) عبر الرابط:\n'},
+ {k:'vote',t:'التصويت على وقت الحضور',u:ORG_URL+'vote/',d:'يختار الوجبة الأولى (12 ظهراً – 6 مساءً) أو الثانية (4 مساءً – 10 ليلاً). النتيجة تطلع هنا بالفلاتر.',m:'السلام عليكم، يرجى اختيار وقت حضورك لتنظيم مؤتمر السيدة خديجة الكبرى (ع):\n12 ظهراً – 6 مساءً أو 4 مساءً – 10 ليلاً\n'}];
+function link(){
+ openM(`<h3>روابط المنظمين</h3>${LINKS.map(l=>`<div class="lk"><b>${l.t}</b><div class="note">${l.d}${l.k==='in'&&!(D.zone&&D.zone.on)?' <b style="display:inline;color:#b3261e">منطقة الحضور بعدها مو مفعّلة.</b>':''}</div><code>${esc(l.u)}</code><div class="row"><a class="btn primary" target="_blank" rel="noopener" href="${wa('',l.m+l.u)}">واتساب</a><button class="btn secondary" data-c="${l.k}">نسخ</button><a class="btn secondary" target="_blank" rel="noopener" href="${l.u}">فتح</a></div></div>`).join('')}<div class="row"><button class="btn secondary" id="lX">إغلاق</button></div>`);
+ mc.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const l=LINKS.find(x=>x.k===b.dataset.c);navigator.clipboard&&navigator.clipboard.writeText(l.u).then(()=>toast('انتسخ الرابط'),()=>{})});mc.querySelector('#lX').onclick=closeM}
+function csv(){const H=['الاسم','الجنس','الهاتف','العمر','السكن','الجامعة أو الجهة','الاختصاص','وقت الحضور','الأيام المتاحة','مجالات المساهمة','الخبرة','حساب التواصل','دخول للنظام','المهمة','حدّث معلوماته',...days().map(d=>'حضور '+d)];
+ const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const rows=D.orgs.map(o=>[o.n,o.g==='m'?'ذكر':'أنثى',o.ph,o.age||'',o.area,o.uni,o.spec,SHIFT[o.shift]||'',o.avail,o.field,o.exp,o.soc,o.uid?roleOf(o):'',o.task||'',o.fu?'نعم':'',...days().map(d=>(o.att||{})[d]?hhmm(o.att[d].t):'')]);
+ const blob=new Blob(['﻿'+[H,...rows].map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='المنظمين-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('نزل ملف المنظمين')}
+$('#opAdd').onclick=()=>edit(null);$('#opZone').onclick=zone;$('#opLink').onclick=link;$('#opCsv').onclick=csv;
 /* زر بالإعدادات (للمدير) */
 const ico='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.6-.3 4.6 1.2 5 4.3"/></svg>';
 const dw=$('#drawer .dScroll');if(dw){const d=document.createElement('div');d.className='orgDrawer';d.innerHTML='<button class="btn secondary block" type="button" id="orgBtn">'+ico+'<span>المنظمين</span></button><p class="help">قائمة المنظمين، الدخول والصلاحيات برمز تلقائي، وحضورهم من داخل الجامعة.</p>';

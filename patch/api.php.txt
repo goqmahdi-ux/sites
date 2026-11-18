@@ -38,7 +38,7 @@ function f_ver(): string { return data_dir() . '/ver'; }
 
 function fresh(): array {
     return ['version' => 1, 'seats' => [], 'guests' => [], 'jobs' => [], 'jobSeq' => 0, 'users' => [], 'sessions' => [],
-        'fails' => [], 'orgs' => [], 'ofails' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
+        'fails' => [], 'orgs' => [], 'ofails' => [], 'oform' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
             'subtitle' => 'مستشفى السيدة خديجة الكبرى (ع) التخصصي للمرأة', 'printMode' => 'auto', 'printer' => '',
             'gap' => 3, 'density' => 10, 'flip' => false, 'offsetX' => 0]];
 }
@@ -51,7 +51,7 @@ function load(): array {
     $set = array_merge($b['settings'], (array)($s['settings'] ?? []));
     $s = array_merge($b, $s);
     $s['settings'] = $set;
-    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
+    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
     if (!is_array($s['settings']['zone'] ?? null)) $s['settings']['zone'] = $b['settings']['zone'];
     // كراسي ما موجودة بترتيب القاعة الحالي تنشال، وضيوفها يرجعون للقائمة
     foreach (array_keys($s['seats']) as $sid) if (!seat_rc((string)$sid)) {
@@ -66,6 +66,16 @@ function save(array &$S, bool $bump = true): void {
     $tmp = f_data() . '.tmp' . getmypid();
     file_put_contents($tmp, json_encode($S, JSON_UNESCAPED_UNICODE));
     rename($tmp, f_data());
+    // نسخة احتياطية كل ساعة (آخر 96 نسخة) حتى البيانات ما تضيع
+    $bk = data_dir() . '/backups';
+    if (is_dir($bk) || @mkdir($bk, 0700, true)) {
+        $f = $bk . '/data-' . date('Ymd-H') . '.json';
+        if (!file_exists($f)) {
+            @copy(f_data(), $f);
+            $all = glob($bk . '/data-*.json') ?: [];
+            if (count($all) > 96) { sort($all); foreach (array_slice($all, 0, count($all) - 96) as $x) @unlink($x); }
+        }
+    }
     file_put_contents(f_ver() . '.tmp', (string)$S['version']);
     rename(f_ver() . '.tmp', f_ver());
 }
@@ -199,9 +209,10 @@ function poly_edge_m(array $P, float $la, float $lo): float {
 function zone_poly(array $z): ?array { return (isset($z['poly']) && is_array($z['poly']) && count($z['poly']) >= 3) ? $z['poly'] : null; }
 function new_pin(array $S): string { do { $p = (string)random_int(100000, 999999); } while (user_by_pin($S, $p)); return $p; }
 function org_clean(array $b, array $o): array {
-    foreach ([['n', 80], ['area', 80], ['uni', 120], ['field', 220], ['exp', 220], ['avail', 60], ['soc', 160], ['note', 220]] as [$k, $n])
+    foreach ([['n', 80], ['area', 80], ['uni', 120], ['spec', 120], ['field', 220], ['exp', 400], ['avail', 60], ['soc', 160], ['note', 220]] as [$k, $n])
         if (!isset($o[$k]) || array_key_exists($k, $b)) $o[$k] = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b[$k] ?? ''))), 0, $n);
     if (!isset($o['g']) || array_key_exists('g', $b)) $o['g'] = ($b['g'] ?? '') === 'm' ? 'm' : 'f';
+    if (!isset($o['shift']) || array_key_exists('shift', $b)) $o['shift'] = in_array($b['shift'] ?? '', ['a', 'b'], true) ? $b['shift'] : '';
     if (!isset($o['ph']) || array_key_exists('ph', $b)) $o['ph'] = norm_ph((string)($b['ph'] ?? ''));
     if (!array_key_exists('age', $o) || array_key_exists('age', $b)) {
         $a = (int)preg_replace('/\D/', '', strtr((string)($b['age'] ?? ''), AR_DIGITS));
@@ -315,6 +326,55 @@ if ($r === 'login' || $r === 'setup') {
     save($S);
     $me = auth($S, $tok);
     out(200, ['ok' => true, 'token' => $tok, 'me' => ['name' => $me['name'], 'role' => $me['role'], 'id' => $uid, 'perms' => $me['perms'], 'task' => $me['task']]]);
+}
+
+/* ----- روابط المنظمين العامة: تحديث المعلومات والتصويت على وقت الحضور (بدون دخول) ----- */
+function org_rate(array &$S): void {
+    $ip = client_ip(); $now = time();
+    $f = $S['oform'][$ip] ?? [0, $now];
+    if ($now - $f[1] > 3600) $f = [0, $now];
+    if ($f[0] >= 60) out(429, ['error' => 'wait', 'msg' => 'محاولات كثيرة من هذا الجهاز، حاول بعد قليل']);
+    $f[0]++; $S['oform'][$ip] = $f;
+    foreach ($S['oform'] as $k => $x) if ($now - ($x[1] ?? 0) > 7200) unset($S['oform'][$k]);
+}
+function org_find(array $S, string $ph, string $name = ''): ?string {
+    if ($ph !== '') foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === $ph) return (string)$k;
+    $nn = fn($x) => preg_replace(['/[إأآ]/u', '/ة/u', '/ى/u', '/\s+/u'], ['ا', 'ه', 'ي', ' '], trim((string)$x));
+    if ($name !== '') foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === '' && $nn($o['n'] ?? '') === $nn($name)) return (string)$k;
+    return null;
+}
+if ($r === 'org-form' || $r === 'org-vote') {
+    org_rate($S);
+    $ph = norm_ph((string)($b['ph'] ?? ''));
+    if (!preg_match('/^07\d{9}$/', $ph)) { save($S, false); out(400, ['error' => 'ph', 'msg' => 'اكتب رقم هاتفك كاملاً، مثل 07701234567']); }
+    $name = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['n'] ?? ''))), 0, 80);
+    $g = in_array($b['g'] ?? '', ['m', 'f'], true) ? $b['g'] : '';
+    $shift = in_array($b['shift'] ?? '', ['a', 'b'], true) ? $b['shift'] : '';
+    if ($r === 'org-vote' && $shift === '') { save($S, false); out(400, ['error' => 'shift', 'msg' => 'اختر وقت الحضور']); }
+    $oid = org_find($S, $ph, $name);
+    // نأخذ بس الحقول الي انكتبت (ما نمسح شي موجود)
+    $in = [];
+    $keys = $r === 'org-form' ? ['area', 'uni', 'spec', 'field', 'exp', 'avail', 'soc', 'age'] : [];
+    foreach ($keys as $k) { $v = trim((string)($b[$k] ?? '')); if ($v !== '') $in[$k] = $v; }
+    if ($g !== '') $in['g'] = $g;
+    if ($shift !== '') $in['shift'] = $shift;
+    if ($oid !== null) {
+        $o = $S['orgs'][$oid];
+        if (trim((string)($o['n'] ?? '')) === '' && $name !== '') $in['n'] = $name;
+        if (($o['ph'] ?? '') === '') $in['ph'] = $ph;
+        $o = org_clean($in, $o);
+        $o['fu'] = now_ms(); if ($shift !== '') $o['sv'] = now_ms();
+        $S['orgs'][$oid] = $o;
+        save($S);
+        out(200, ['ok' => true, 'status' => 'updated', 'name' => explode(' ', trim($o['n']))[0], 'shift' => $o['shift'] ?? '']);
+    }
+    if (mb_strlen($name) < 6 || $g === '') { save($S, false); out(404, ['error' => 'need', 'msg' => 'رقمك غير مسجّل لدينا بعد. اكتب اسمك الثلاثي واختر الجنس حتى نسجّلك منظماً.']); }
+    $in['n'] = $name; $in['ph'] = $ph;
+    $o = org_clean($in, ['att' => [], 'uid' => null, 'pin' => null, 'ct' => time(), 'src' => $r === 'org-form' ? 'form' : 'vote']);
+    $o['fu'] = now_ms(); if ($shift !== '') $o['sv'] = now_ms();
+    $S['orgs']['o' . rid(4)] = $o;
+    save($S);
+    out(200, ['ok' => true, 'status' => 'new', 'name' => explode(' ', $name)[0], 'shift' => $o['shift']]);
 }
 
 /* ----- organizer check-in (no login, must be inside the venue zone) ----- */
