@@ -260,7 +260,7 @@ function teams_out(array $S): array {
 function org_res(array $S): array {
     $ad = [];
     foreach ($S['users'] as $uid => $u) if ($u['role'] === 'admin') $ad[] = ['id' => $uid, 'name' => $u['name']];
-    return ['orgs' => orgs_out($S), 'zone' => $S['settings']['zone'], 'today' => date('Y-m-d'), 'admins' => $ad, 'loose' => votes_loose($S), 'nvotes' => count($S['votes']), 'teams' => teams_out($S)];
+    return ['orgs' => orgs_out($S), 'zone' => $S['settings']['zone'], 'today' => date('Y-m-d'), 'admins' => $ad, 'loose' => votes_loose($S), 'nvotes' => count($S['votes']), 'teams' => teams_out($S), 'tpl' => (object)($S['settings']['tpl'] ?? [])];
 }
 function remove_user(array &$S, string $uid): void {
     unset($S['users'][$uid]);
@@ -727,6 +727,8 @@ switch ($r) {
         $t['m'] = $m;
         $lead = (string)($b['lead'] ?? '');
         $t['lead'] = in_array($lead, $m, true) ? $lead : null;
+        $ar = (string)($b['ar'] ?? '');
+        $t['ar'] = in_array($ar, ['gate', 'yard', 'lobby', 'hall'], true) ? $ar : ($t['ar'] ?? 'hall');
         foreach (['x' => [0, 1], 'y' => [0, 1], 'r' => [0.02, 0.35]] as $k => [$lo, $hi])
             if (is_numeric($b[$k] ?? null)) $t[$k] = round(max($lo, min($hi, (float)$b[$k])), 4); elseif (!isset($t[$k])) $t[$k] = null;
         if (!$upd) $id = 't' . rid(3);
@@ -737,6 +739,16 @@ switch ($r) {
         }
         $S['teams'][$id] = $t;
         odone($S, $me, ['tid' => $id]);
+    }
+    case 'teams/pl': {
+        if (!$admin) deny();
+        $pl = (array)($S['settings']['tpl'] ?? []);
+        foreach ((array)($b['pl'] ?? []) as $k => $v) {
+            if (!in_array((string)$k, ['g1', 'g2'], true) || !is_array($v) || !is_numeric($v['x'] ?? null) || !is_numeric($v['y'] ?? null)) continue;
+            $pl[(string)$k] = ['x' => round(max(0, min(1, (float)$v['x'])), 4), 'y' => round(max(0, min(1, (float)$v['y'])), 4)];
+        }
+        $S['settings']['tpl'] = $pl;
+        odone($S, $me);
     }
     case 'teams/delete': {
         if (!$admin) deny();
