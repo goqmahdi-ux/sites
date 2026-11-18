@@ -1,0 +1,850 @@
+<?php
+/*
+ * العروش للفعاليات — نظام استقبال الحضور (نسخة الإنترنت)
+ * ملف واحد، بدون قاعدة بيانات: البيانات تنحفظ بملف JSON برا مجلد الموقع.
+ * يحتاج PHP 7.4 أو أحدث (موجود بكل استضافات Hostinger).
+ */
+declare(strict_types=1);
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
+ini_set('display_errors', '0');
+@set_time_limit(40);
+date_default_timezone_set('Asia/Baghdad');
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
+header('X-Content-Type-Options: nosniff');
+
+const ROWS = 11, COLS = 30, VIP_ROWS = 2; // 330 كرسي: 3 أقسام × 10 كراسي، 11 صف
+const PERMS = ['checkin', 'print', 'reprint', 'move', 'free', 'guests', 'export'];
+const DEFAULT_PERMS = ['checkin', 'print', 'reprint'];
+
+/* ---------------- storage ---------------- */
+function data_dir(): string {
+    static $dir = null;
+    if ($dir) return $dir;
+    $cands = [dirname(__DIR__, 2) . '/.uroosh-data-' . basename(__DIR__), __DIR__ . '/_data'];
+    foreach ($cands as $d) {
+        if ((is_dir($d) || @mkdir($d, 0700, true)) && is_writable($d)) {
+            if (strpos($d, __DIR__) === 0) {
+                if (!file_exists("$d/.htaccess")) @file_put_contents("$d/.htaccess", "Require all denied\nDeny from all\n");
+                if (!file_exists("$d/index.html")) @file_put_contents("$d/index.html", '');
+            }
+            return $dir = $d;
+        }
+    }
+    out(500, ['error' => 'storage', 'msg' => 'السيرفر ما يسمح نحفظ البيانات، تأكد من صلاحيات المجلد']);
+}
+function f_data(): string { return data_dir() . '/data.json'; }
+function f_ver(): string { return data_dir() . '/ver'; }
+
+function fresh(): array {
+    return ['version' => 1, 'seats' => [], 'guests' => [], 'jobs' => [], 'jobSeq' => 0, 'users' => [], 'sessions' => [],
+        'fails' => [], 'orgs' => [], 'ofails' => [], 'oform' => [], 'votes' => [], 'teams' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
+            'subtitle' => 'مستشفى السيدة خديجة الكبرى (ع) التخصصي للمرأة', 'printMode' => 'auto', 'printer' => '',
+            'gap' => 3, 'density' => 10, 'flip' => false, 'offsetX' => 0]];
+}
+function load(): array {
+    $b = fresh();
+    $raw = @file_get_contents(f_data());
+    if ($raw === false || $raw === '') return $b;
+    $s = json_decode($raw, true);
+    if (!is_array($s)) { @copy(f_data(), f_data() . '.broken-' . time()); return $b; }
+    $set = array_merge($b['settings'], (array)($s['settings'] ?? []));
+    $s = array_merge($b, $s);
+    $s['settings'] = $set;
+    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform', 'votes', 'teams'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
+    if (!is_array($s['settings']['zone'] ?? null)) $s['settings']['zone'] = $b['settings']['zone'];
+    // كراسي ما موجودة بترتيب القاعة الحالي تنشال، وضيوفها يرجعون للقائمة
+    foreach (array_keys($s['seats']) as $sid) if (!seat_rc((string)$sid)) {
+        $g = $s['seats'][$sid]['g'] ?? '';
+        unset($s['seats'][$sid]);
+        if ($g !== '' && isset($s['guests'][$g])) $s['guests'][$g]['s'] = null;
+    }
+    return $s;
+}
+function save(array &$S, bool $bump = true): void {
+    if ($bump) $S['version']++;
+    $tmp = f_data() . '.tmp' . getmypid();
+    file_put_contents($tmp, json_encode($S, JSON_UNESCAPED_UNICODE));
+    rename($tmp, f_data());
+    // نسخة احتياطية كل ساعة (آخر 96 نسخة) حتى البيانات ما تضيع
+    $bk = data_dir() . '/backups';
+    if (is_dir($bk) || @mkdir($bk, 0700, true)) {
+        $f = $bk . '/data-' . date('Ymd-H') . '.json';
+        if (!file_exists($f)) {
+            @copy(f_data(), $f);
+            $all = glob($bk . '/data-*.json') ?: [];
+            if (count($all) > 96) { sort($all); foreach (array_slice($all, 0, count($all) - 96) as $x) @unlink($x); }
+        }
+    }
+    file_put_contents(f_ver() . '.tmp', (string)$S['version']);
+    rename(f_ver() . '.tmp', f_ver());
+}
+$LOCK = null;
+function lock(): void {
+    global $LOCK;
+    $LOCK = fopen(data_dir() . '/lock', 'c');
+    flock($LOCK, LOCK_EX);
+}
+
+/* ---------------- helpers ---------------- */
+function out(int $code, $obj): void {
+    http_response_code($code);
+    echo json_encode($obj, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+function obj(array $a) { return $a ? $a : new stdClass(); }
+function now_ms(): int { return (int)round(microtime(true) * 1000); }
+function rid(int $n = 5): string { return bin2hex(random_bytes($n)); }
+function sec_of(int $r): string { return 'صف ' . $r; }
+function lbl_of(int $r, int $c): string { return 'ABC'[intdiv($c - 1, 10)] . (($c - 1) % 10 + 1); }
+function seat_rc(string $sid): ?array {
+    if (!preg_match('/^R(\d{1,2})-(\d{1,2})$/', $sid, $m)) return null;
+    $r = (int)$m[1]; $c = (int)$m[2];
+    return ($r >= 1 && $r <= ROWS && $c >= 1 && $c <= COLS && seat_ok($r, $c)) ? [$r, $c] : null;
+}
+/* تقسيم حسب الجنس: القسم B (كراسي 11-20) كله رجال، والصف الأول من القسم A رجال، وباقي A والقسم C كله نساء */
+/* كراسي غير موجودة: A10 بالصف 11، و B10 بالصفوف الزوجية (القسم B يتناوب 10 و 9) */
+function seat_ok(int $r, int $c): bool { return !(($r === 11 && $c === 10) || ($c === 20 && $r % 2 === 0)); }
+function zone_g(int $r, int $c): string { return (($c >= 11 && $c <= 20) || ($c <= 10 && $r === 1)) ? 'm' : 'f'; }
+function g_lbl(string $g): string { return $g === 'm' ? 'للرجال' : 'للنساء'; }
+/* صفوف VIP: القسم B (كراسي 11-20) أول 3 صفوف، والقسمين A و C أول صفين */
+function is_vip(int $r, int $c): bool { return $r <= (($c >= 11 && $c <= 20) ? 3 : 2); }
+function cat_of_seat(string $sid): string { [$r, $c] = seat_rc($sid); return is_vip($r, $c) ? 'VIP' : 'عادي'; }
+function hash_pin(string $pin, string $salt): string { return hash('sha256', $salt . ':' . $pin); }
+function valid_pin($pin): bool { return is_string($pin) && preg_match('/^\d{4,8}$/', $pin) === 1; }
+function user_by_pin(array $S, string $pin): ?string {
+    foreach ($S['users'] as $uid => $u) if (hash_equals($u['hash'], hash_pin($pin, $u['salt']))) return $uid;
+    return null;
+}
+function clean_perms($p): array { return array_values(array_intersect(PERMS, is_array($p) ? $p : [])); }
+function token(): string { return (string)($_SERVER['HTTP_X_TOKEN'] ?? $_GET['t'] ?? ''); }
+function auth(array $S, string $tok): ?array {
+    if ($tok === '' || !isset($S['sessions'][$tok])) return null;
+    $uid = $S['sessions'][$tok]['uid'];
+    if (!isset($S['users'][$uid])) return null;
+    $u = $S['users'][$uid];
+    return ['uid' => $uid, 'name' => $u['name'], 'role' => $u['role'], 'token' => $tok,
+        'perms' => $u['role'] === 'admin' ? PERMS : clean_perms($u['perms'] ?? DEFAULT_PERMS),
+        'task' => $u['task'] ?? '', 'sup' => $u['sup'] ?? null];
+}
+function can(array $me, string $p): bool { return $me['role'] === 'admin' || in_array($p, $me['perms'], true); }
+function admins(array $S): array { return array_keys(array_filter($S['users'], fn($u) => $u['role'] === 'admin')); }
+function target_admin(array $S, array $me): ?string {
+    if ($me['role'] === 'admin') return $me['uid'];
+    $sup = $me['sup'];
+    if ($sup && isset($S['users'][$sup]) && $S['users'][$sup]['role'] === 'admin') return $sup;
+    return admins($S)[0] ?? null;
+}
+function add_job(array &$S, array $me, string $sid, string $name, string $kind = 'guest'): array {
+    [$r, $c] = seat_rc($sid);
+    $to = target_admin($S, $me);
+    $S['jobSeq']++;
+    $j = ['id' => $S['jobSeq'], 'n' => $name, 'sec' => sec_of($r), 'lbl' => lbl_of($r, $c), 'r' => $r, 'seat' => $sid,
+        't' => now_ms(), 'by' => $me['uid'], 'byName' => $me['name'], 'to' => $to,
+        'toName' => $to ? $S['users'][$to]['name'] : '', 'st' => 'new', 'kind' => $kind, 'claimed' => 'queue'];
+    $S['jobs'][] = $j;
+    if (count($S['jobs']) > 600) $S['jobs'] = array_slice($S['jobs'], -600);
+    return $j;
+}
+function users_public(array $S): array {
+    $cnt = [];
+    foreach ($S['seats'] as $d) { $k = $d['bu'] ?? ''; $cnt[$k] = ($cnt[$k] ?? 0) + 1; }
+    $out = [];
+    foreach ($S['users'] as $uid => $u) {
+        $out[] = ['id' => $uid, 'name' => $u['name'], 'role' => $u['role'], 'task' => $u['task'] ?? '',
+            'sup' => $u['sup'] ?? null, 'perms' => $u['role'] === 'admin' ? PERMS : clean_perms($u['perms'] ?? DEFAULT_PERMS),
+            'seen' => $u['seen'] ?? 0, 'n' => $cnt[$uid] ?? 0];
+    }
+    return $out;
+}
+function public_state(array $S, array $me): array {
+    $pend = 0;
+    foreach ($S['jobs'] as $j) if (($j['st'] ?? '') === 'new' && ($j['to'] ?? '') === $me['uid']) $pend++;
+    $set = $S['settings'];
+    $set['printModeEff'] = 'queue';
+    $st = ['version' => $S['version'], 'seats' => obj($S['seats']), 'guests' => obj($S['guests']), 'settings' => $set,
+        'stations' => 0, 'pending' => $pend, 'caps' => ['team', 'queue'],
+        'me' => ['name' => $me['name'], 'role' => $me['role'], 'id' => $me['uid'], 'perms' => $me['perms'],
+            'task' => $me['task'], 'sup' => $me['sup'], 'supName' => ($me['sup'] && isset($S['users'][$me['sup']])) ? $S['users'][$me['sup']]['name'] : '']];
+    if ($me['role'] === 'admin') {
+        $st['users'] = users_public($S);
+        $st['jobs'] = array_slice($S['jobs'], -300);
+    } else {
+        $st['jobs'] = array_values(array_slice(array_filter($S['jobs'], fn($j) => ($j['by'] ?? '') === $me['uid']), -40));
+    }
+    return $st;
+}
+/* ---------------- organizers ---------------- */
+const AR_DIGITS = ['٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9'];
+function norm_ph(string $v): string {
+    $d = preg_replace('/\D/', '', strtr($v, AR_DIGITS));
+    if (strpos($d, '00964') === 0) $d = substr($d, 5); elseif (strpos($d, '964') === 0) $d = substr($d, 3);
+    if (strlen($d) === 10 && $d[0] === '7') $d = '0' . $d;
+    return substr($d, 0, 15);
+}
+function dist_m(float $a, float $b, float $c, float $d): float {
+    $h = sin(deg2rad($c - $a) / 2) ** 2 + cos(deg2rad($a)) * cos(deg2rad($c)) * sin(deg2rad($d - $b) / 2) ** 2;
+    return 2 * 6371000 * asin(min(1.0, sqrt($h)));
+}
+function in_poly(array $P, float $la, float $lo): bool {
+    $in = false; $n = count($P);
+    for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
+        $ya = (float)$P[$i][0]; $xa = (float)$P[$i][1]; $yb = (float)$P[$j][0]; $xb = (float)$P[$j][1];
+        if ((($ya > $la) !== ($yb > $la)) && ($lo < ($xb - $xa) * ($la - $ya) / ($yb - $ya) + $xa)) $in = !$in;
+    }
+    return $in;
+}
+function poly_edge_m(array $P, float $la, float $lo): float {
+    $kx = 111320 * cos(deg2rad($la)); $ky = 110574; $best = INF; $n = count($P);
+    for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
+        $ax = ((float)$P[$j][1] - $lo) * $kx; $ay = ((float)$P[$j][0] - $la) * $ky;
+        $bx = ((float)$P[$i][1] - $lo) * $kx; $by = ((float)$P[$i][0] - $la) * $ky;
+        $dx = $bx - $ax; $dy = $by - $ay; $l = $dx * $dx + $dy * $dy;
+        $t = $l > 0 ? max(0.0, min(1.0, -($ax * $dx + $ay * $dy) / $l)) : 0.0;
+        $best = min($best, hypot($ax + $t * $dx, $ay + $t * $dy));
+    }
+    return $best;
+}
+function zone_poly(array $z): ?array { return (isset($z['poly']) && is_array($z['poly']) && count($z['poly']) >= 3) ? $z['poly'] : null; }
+function new_pin(array $S): string { do { $p = (string)random_int(100000, 999999); } while (user_by_pin($S, $p)); return $p; }
+function org_clean(array $b, array $o): array {
+    foreach ([['n', 80], ['area', 80], ['uni', 120], ['spec', 120], ['field', 220], ['exp', 400], ['avail', 60], ['avt', 80], ['soc', 160], ['note', 220]] as [$k, $n])
+        if (!isset($o[$k]) || array_key_exists($k, $b)) $o[$k] = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b[$k] ?? ''))), 0, $n);
+    if (!isset($o['g']) || array_key_exists('g', $b)) $o['g'] = ($b['g'] ?? '') === 'm' ? 'm' : 'f';
+    foreach (['avf', 'avto'] as $k) if (!array_key_exists($k, $o) || array_key_exists($k, $b)) { $h = $b[$k] ?? null; $o[$k] = (is_numeric($h) && (int)$h >= 0 && (int)$h <= 24) ? (int)$h : null; }
+    if (!isset($o['shift']) || array_key_exists('shift', $b)) $o['shift'] = in_array($b['shift'] ?? '', ['a', 'b'], true) ? $b['shift'] : '';
+    if (!isset($o['ph']) || array_key_exists('ph', $b)) $o['ph'] = norm_ph((string)($b['ph'] ?? ''));
+    if (!array_key_exists('age', $o) || array_key_exists('age', $b)) {
+        $a = (int)preg_replace('/\D/', '', strtr((string)($b['age'] ?? ''), AR_DIGITS));
+        $o['age'] = ($a >= 10 && $a <= 90) ? $a : null;
+    }
+    return $o;
+}
+// مقارنة التصويت مع بيانات المنظم (تنحسب كل مرة تنفتح القائمة)
+function vote_cmp(array $S, array $x): array {
+    $v = null; $vp = '';
+    foreach ([$x['ph'] ?? '', $x['vph'] ?? ''] as $p) if ($p !== '' && isset($S['votes'][$p])) { if (!$v || $S['votes'][$p]['t'] > $v['t']) { $v = $S['votes'][$p]; $vp = $p; } }
+    if (!$v) return ['vote' => null];
+    return ['vote' => ['n' => $v['n'], 'shift' => $v['shift'], 't' => $v['t'], 'c' => $v['c'] ?? 1, 'ph' => $vp,
+        'how' => $vp === ($x['ph'] ?? '') ? 'phone' : 'name', 'nameOk' => same_name($v['n'], $x['n'] ?? '')]];
+}
+function votes_loose(array $S): array {
+    $own = [];
+    foreach ($S['orgs'] as $o) { if (($o['ph'] ?? '') !== '') $own[$o['ph']] = 1; if (($o['vph'] ?? '') !== '') $own[$o['vph']] = 1; }
+    $out = [];
+    foreach ($S['votes'] as $p => $v) if (!isset($own[$p])) $out[] = ['ph' => (string)$p] + $v;
+    return $out;
+}
+function orgs_out(array $S): array {
+    $out = [];
+    foreach ($S['orgs'] as $id => $x) {
+        $uid = $x['uid'] ?? null;
+        $u = ($uid && isset($S['users'][$uid])) ? $S['users'][$uid] : null;
+        $out[] = array_merge(['id' => $id], $x, ['uid' => $u ? $uid : null, 'pin' => $u ? ($x['pin'] ?? null) : null,
+            'role' => $u['role'] ?? null, 'perms' => $u ? ($u['role'] === 'admin' ? PERMS : clean_perms($u['perms'] ?? DEFAULT_PERMS)) : [],
+            'task' => $u['task'] ?? '', 'sup' => $u['sup'] ?? null, 'seen' => $u['seen'] ?? 0, 'att' => obj((array)($x['att'] ?? []))], vote_cmp($S, $x));
+    }
+    return $out;
+}
+/* الفرق: كل فريق بيه أعضاء من المنظمين، لون، ومكانه على مخطط القاعة (دائرة) */
+function teams_out(array $S): array {
+    $out = [];
+    foreach ($S['teams'] as $id => $t) {
+        $m = array_values(array_filter((array)($t['m'] ?? []), fn($x) => isset($S['orgs'][$x])));
+        $out[] = ['id' => (string)$id] + $t + ['m' => $m];
+    }
+    usort($out, fn($a, $b) => ($a['ct'] ?? 0) <=> ($b['ct'] ?? 0));
+    return $out;
+}
+function org_res(array $S): array {
+    $ad = [];
+    foreach ($S['users'] as $uid => $u) if ($u['role'] === 'admin') $ad[] = ['id' => $uid, 'name' => $u['name']];
+    return ['orgs' => orgs_out($S), 'zone' => $S['settings']['zone'], 'today' => date('Y-m-d'), 'admins' => $ad, 'loose' => votes_loose($S), 'nvotes' => count($S['votes']), 'teams' => teams_out($S)];
+}
+function remove_user(array &$S, string $uid): void {
+    unset($S['users'][$uid]);
+    foreach ($S['sessions'] as $t => $se) if ($se['uid'] === $uid) unset($S['sessions'][$t]);
+    foreach ($S['users'] as &$x) if (($x['sup'] ?? null) === $uid) $x['sup'] = null;
+    unset($x);
+    foreach ($S['jobs'] as &$j) if (($j['to'] ?? '') === $uid && $j['st'] === 'new') { $j['to'] = admins($S)[0] ?? null; $j['toName'] = $j['to'] ? $S['users'][$j['to']]['name'] : ''; }
+    unset($j);
+    foreach ($S['orgs'] as &$o) if (($o['uid'] ?? null) === $uid) { $o['uid'] = null; $o['pin'] = null; }
+    unset($o);
+}
+function client_ip(): string { return (string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '?'); }
+
+/* ---------------- request ---------------- */
+$r = preg_replace('~[^a-z0-9/._-]~', '', strtolower((string)($_GET['r'] ?? '')));
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($method === 'GET') {
+    if ($r === 'ping') out(200, ['ok' => true, 'mode' => 'server', 'api' => 'php', 'caps' => ['team', 'queue']]);
+    if ($r === 'session') {
+        $S = load(); $me = auth($S, token());
+        out(200, ['needsSetup' => !$S['users'], 'title' => $S['settings']['title'],
+            'me' => $me ? ['name' => $me['name'], 'role' => $me['role'], 'id' => $me['uid'], 'perms' => $me['perms'], 'task' => $me['task']] : null]);
+    }
+    if ($r === 'state') {
+        $since = (int)($_GET['since'] ?? 0);
+        $end = microtime(true) + 12;
+        while (true) {
+            clearstatcache(true, f_ver());
+            $v = (int)(@file_get_contents(f_ver()) ?: 1);
+            if ($v > $since || microtime(true) >= $end) break;
+            usleep(300000);
+        }
+        $S = load(); $me = auth($S, token());
+        if (!$me) out(401, ['error' => 'auth']);
+        out(200, public_state($S, $me));
+    }
+    if ($r === 'export.csv') {
+        $S = load(); $me = auth($S, token());
+        if (!$me || !can($me, 'export')) out(403, ['error' => 'perm']);
+        $rows = [];
+        foreach ($S['seats'] as $sid => $d) { [$rr, $cc] = seat_rc($sid); $rows[] = [$rr, $cc, $d]; }
+        usort($rows, fn($a, $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=attendance.csv');
+        $o = fopen('php://output', 'w');
+        fwrite($o, "\xEF\xBB\xBF");
+        fputcsv($o, ['الاسم', 'الصف', 'الكرسي', 'وقت الوصول', 'سجّله']);
+        foreach ($rows as [$rr, $cc, $d]) fputcsv($o, [$d['n'], sec_of($rr), lbl_of($rr, $cc), date('H:i', (int)($d['t'] / 1000)), $d['by'] ?? '']);
+        $wait = array_filter($S['guests'], fn($g) => empty($g['s']));
+        if ($wait) { fputcsv($o, []); fputcsv($o, ['ضيوف بالقائمة ما وصلوا']); foreach ($wait as $g) fputcsv($o, [$g['n']]); }
+        exit;
+    }
+    out(404, ['error' => 'nf']);
+}
+
+if ($method !== 'POST') out(405, ['error' => 'method']);
+$b = json_decode((string)file_get_contents('php://input'), true);
+if (!is_array($b)) $b = [];
+
+lock();
+$S = load();
+
+/* ----- login / setup ----- */
+if ($r === 'login' || $r === 'setup') {
+    $ip = client_ip();
+    $f = $S['fails'][$ip] ?? [0, 0];
+    if ($f[1] > time()) out(429, ['error' => 'wait', 'msg' => 'محاولات كثيرة، انتظر ' . ($f[1] - time() + 1) . ' ثانية']);
+    if ($r === 'setup') {
+        if ($S['users']) out(409, ['error' => 'done', 'msg' => 'النظام معدّ مسبقاً، سجّل دخول']);
+        $pin = (string)($b['pin'] ?? '');
+        if (!valid_pin($pin)) out(400, ['error' => 'pin', 'msg' => 'الرمز لازم يكون أرقام، من 4 إلى 8']);
+        $uid = 'u' . rid(4); $salt = rid(8);
+        $S['users'][$uid] = ['name' => mb_substr(trim((string)($b['name'] ?? '')) ?: 'المدير', 0, 40), 'role' => 'admin',
+            'salt' => $salt, 'hash' => hash_pin($pin, $salt), 'task' => 'المدير العام', 'sup' => null, 'perms' => PERMS, 'created' => time()];
+    } else {
+        $uid = user_by_pin($S, (string)($b['pin'] ?? ''));
+        if (!$uid) {
+            $n = $f[0] + 1;
+            $S['fails'][$ip] = [$n, $n >= 5 ? time() + min(600, 30 * (2 ** ($n - 5))) : 0];
+            save($S, false);
+            out(401, ['error' => 'pin', 'msg' => 'الرمز غلط']);
+        }
+        unset($S['fails'][$ip]);
+    }
+    $tok = rid(20);
+    $S['sessions'][$tok] = ['uid' => $uid, 't' => time()];
+    $S['users'][$uid]['seen'] = time();
+    save($S);
+    $me = auth($S, $tok);
+    out(200, ['ok' => true, 'token' => $tok, 'me' => ['name' => $me['name'], 'role' => $me['role'], 'id' => $uid, 'perms' => $me['perms'], 'task' => $me['task']]]);
+}
+
+/* ----- روابط المنظمين العامة: تحديث المعلومات والتصويت على وقت الحضور (بدون دخول) ----- */
+function org_rate(array &$S): void {
+    $ip = client_ip(); $now = time();
+    $f = $S['oform'][$ip] ?? [0, $now];
+    if ($now - $f[1] > 3600) $f = [0, $now];
+    if ($f[0] >= 60) out(429, ['error' => 'wait', 'msg' => 'محاولات كثيرة من هذا الجهاز، حاول بعد قليل']);
+    $f[0]++; $S['oform'][$ip] = $f;
+    foreach ($S['oform'] as $k => $x) if ($now - ($x[1] ?? 0) > 7200) unset($S['oform'][$k]);
+}
+function nname(string $x): string {
+    $x = preg_replace(['/[إأآ]/u', '/ة/u', '/ى/u', '/ؤ/u', '/ئ/u', '/[\x{064B}-\x{0652}\x{0640}]/u', '/[^\p{Arabic}\p{L}\s]/u', '/\s+/u'], ['ا', 'ه', 'ي', 'و', 'ي', '', ' ', ' '], trim($x));
+    $x = preg_replace('/(^|\s)عبد\s+/u', '$1عبد', (string)$x);
+    return trim((string)$x);
+}
+// نفس الشخص إذا أول اسمين متطابقين والاسم الأقصر جزء من الأطول
+function same_name(string $a, string $b): bool {
+    $x = explode(' ', nname($a)); $y = explode(' ', nname($b));
+    if (count($x) < 2 || count($y) < 2) return false;
+    $n = min(count($x), count($y));
+    if ($n < 3 && count($x) !== count($y)) return false; // الاسم الثنائي لازم يطابق بالكامل
+    return array_slice($x, 0, $n) === array_slice($y, 0, $n);
+}
+function org_by_name(array $S, string $name, string $skipPh = ''): ?string {
+    $hit = [];
+    foreach ($S['orgs'] as $k => $o) if (same_name($o['n'] ?? '', $name)) $hit[] = (string)$k;
+    return count($hit) === 1 ? $hit[0] : null;
+}
+function guess_g(string $name): string {
+    $f = explode(' ', nname($name))[0] ?? '';
+    $m = ['محمد','علي','حسين','حسن','احمد','مهدي','جعفر','عباس','مصطفي','مرتضي','منتظر','حيدر','كرار','زيد','يوسف','هاشم','سجاد','امير','باقر','صادق','كاظم','رضا','مسلم','عمار','ياسر','قاسم','جاسم','سلمان','عقيل','حمزه','ابراهيم','اسماعيل','موسي','عيسي','عمر','خالد','سيف','ميثم','مؤمل','مومل','حسنين','اكبر','ليث','ضياء','نور الدين','فاضل','سالم','جواد','رسول','عبدالله','عبدالرحمن','عبدالمهدي','عبدالحسين','عبدالرضا','عبدالامير','عبدالكريم','عبدالزهره'];
+    return in_array($f, $m, true) ? 'm' : 'f';
+}
+function org_find(array $S, string $ph, string $name = ''): ?string {
+    if ($ph !== '') foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === $ph) return (string)$k;
+    $nn = fn($x) => preg_replace(['/[إأآ]/u', '/ة/u', '/ى/u', '/\s+/u'], ['ا', 'ه', 'ي', ' '], trim((string)$x));
+    if ($name !== '') foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === '' && $nn($o['n'] ?? '') === $nn($name)) return (string)$k;
+    return null;
+}
+if ($r === 'org-vote') {
+    org_rate($S);
+    $ph = norm_ph((string)($b['ph'] ?? ''));
+    $name = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['n'] ?? ''))), 0, 80);
+    $shift = in_array($b['shift'] ?? '', ['a', 'b'], true) ? $b['shift'] : '';
+    if (!preg_match('/^07\d{9}$/', $ph)) { save($S, false); out(400, ['error' => 'ph', 'msg' => 'اكتب رقم هاتفك كاملاً، مثل 07701234567']); }
+    if (count(explode(' ', $name)) < 2) { save($S, false); out(400, ['error' => 'n', 'msg' => 'اكتب اسمك الثلاثي']); }
+    if ($shift === '') { save($S, false); out(400, ['error' => 'shift', 'msg' => 'اختر وقت الحضور']); }
+    $old = $S['votes'][$ph] ?? null;
+    $S['votes'][$ph] = ['n' => $name, 'shift' => $shift, 't' => now_ms(), 'c' => (int)($old['c'] ?? 0) + 1];
+    // المقارنة: بالرقم أول، وإذا ماكو بالاسم، وإذا ماكو نضيفه منظم جديد
+    $oid = null; $how = 'phone';
+    foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === $ph || ($o['vph'] ?? '') === $ph) { $oid = (string)$k; break; }
+    if ($oid === null && ($oid = org_by_name($S, $name)) !== null) {
+        $how = 'name';
+        if (($S['orgs'][$oid]['ph'] ?? '') === '') $S['orgs'][$oid]['ph'] = $ph; else $S['orgs'][$oid]['vph'] = $ph;
+    }
+    if ($oid === null) {
+        $how = 'new'; $oid = 'o' . rid(4);
+        $S['orgs'][$oid] = org_clean(['n' => $name, 'ph' => $ph, 'g' => guess_g($name)], ['att' => [], 'uid' => null, 'pin' => null, 'ct' => time(), 'src' => 'vote']);
+    }
+    $S['orgs'][$oid]['shift'] = $shift; $S['orgs'][$oid]['sv'] = now_ms();
+    save($S);
+    out(200, ['ok' => true, 'status' => $how, 'name' => explode(' ', $name)[0], 'shift' => $shift, 'again' => $old !== null]);
+}
+if ($r === 'org-form') {
+    org_rate($S);
+    $ph = norm_ph((string)($b['ph'] ?? ''));
+    if (!preg_match('/^07\d{9}$/', $ph)) { save($S, false); out(400, ['error' => 'ph', 'msg' => 'اكتب رقم هاتفك كاملاً، مثل 07701234567']); }
+    $name = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['n'] ?? ''))), 0, 80);
+    $g = in_array($b['g'] ?? '', ['m', 'f'], true) ? $b['g'] : '';
+    $shift = in_array($b['shift'] ?? '', ['a', 'b'], true) ? $b['shift'] : '';
+    if ($r === 'org-vote' && $shift === '') { save($S, false); out(400, ['error' => 'shift', 'msg' => 'اختر وقت الحضور']); }
+    $oid = org_find($S, $ph, $name);
+    // نأخذ بس الحقول الي انكتبت (ما نمسح شي موجود)
+    $in = [];
+    $keys = $r === 'org-form' ? ['area', 'uni', 'spec', 'field', 'exp', 'avail', 'avt', 'avf', 'avto', 'soc', 'age'] : [];
+    foreach ($keys as $k) { $v = trim((string)($b[$k] ?? '')); if ($v !== '') $in[$k] = $v; }
+    if ($g !== '') $in['g'] = $g;
+    if ($shift !== '') $in['shift'] = $shift;
+    if ($oid !== null) {
+        $o = $S['orgs'][$oid];
+        if (trim((string)($o['n'] ?? '')) === '' && $name !== '') $in['n'] = $name;
+        if (($o['ph'] ?? '') === '') $in['ph'] = $ph;
+        $o = org_clean($in, $o);
+        $o['fu'] = now_ms(); if ($shift !== '') $o['sv'] = now_ms();
+        $S['orgs'][$oid] = $o;
+        save($S);
+        out(200, ['ok' => true, 'status' => 'updated', 'name' => explode(' ', trim($o['n']))[0], 'shift' => $o['shift'] ?? '']);
+    }
+    if (mb_strlen($name) < 6 || $g === '') { save($S, false); out(404, ['error' => 'need', 'msg' => 'رقمك غير مسجّل لدينا بعد. اكتب اسمك الثلاثي واختر الجنس حتى نسجّلك منظماً.']); }
+    $in['n'] = $name; $in['ph'] = $ph;
+    $o = org_clean($in, ['att' => [], 'uid' => null, 'pin' => null, 'ct' => time(), 'src' => $r === 'org-form' ? 'form' : 'vote']);
+    $o['fu'] = now_ms(); if ($shift !== '') $o['sv'] = now_ms();
+    $S['orgs']['o' . rid(4)] = $o;
+    save($S);
+    out(200, ['ok' => true, 'status' => 'new', 'name' => explode(' ', $name)[0], 'shift' => $o['shift']]);
+}
+
+/* ----- organizer check-in (no login, must be inside the venue zone) ----- */
+if ($r === 'org-checkin') {
+    $ip = client_ip();
+    $f = $S['ofails'][$ip] ?? [0, 0];
+    if ($f[1] > time()) out(429, ['error' => 'wait', 'msg' => 'محاولات كثيرة، انتظر ' . ($f[1] - time() + 1) . ' ثانية ثم أعد المحاولة']);
+    $z = $S['settings']['zone']; $poly = zone_poly($z);
+    if (empty($z['on']) || (!$poly && (!is_numeric($z['lat'] ?? null) || !is_numeric($z['lng'] ?? null)))) out(409, ['error' => 'zone', 'msg' => 'لم يُحدَّد موقع الجامعة بعد، يُرجى مراجعة المسؤول']);
+    $p = norm_ph((string)($b['ph'] ?? ''));
+    $oid = null;
+    if (strlen($p) >= 10) foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === $p) { $oid = (string)$k; break; }
+    if ($oid === null) {
+        $n = $f[0] + 1;
+        $S['ofails'][$ip] = [$n, $n >= 8 ? time() + min(300, 20 * (2 ** ($n - 8))) : 0];
+        save($S, false);
+        out(404, ['error' => 'nf', 'msg' => 'هذا الرقم غير موجود في قائمة المنظمين، تأكد منه أو راجع المسؤول']);
+    }
+    unset($S['ofails'][$ip]);
+    $lat = $b['lat'] ?? null; $lng = $b['lng'] ?? null; $acc = is_numeric($b['acc'] ?? null) ? (float)$b['acc'] : 0.0;
+    if (!is_numeric($lat) || !is_numeric($lng)) out(400, ['error' => 'loc', 'msg' => 'تعذّر الحصول على موقعك، فعّل خدمة الموقع ثم أعد المحاولة']);
+    $first = explode(' ', trim($S['orgs'][$oid]['n']))[0];
+    if ($poly) {
+        if ($acc > 150) out(422, ['error' => 'acc', 'msg' => 'إشارة الموقع ضعيفة الآن (الدقة قرابة ' . (int)round($acc) . ' متر). انتظر لحظات أو اقترب من نافذة، ثم أعد المحاولة.']);
+        $inside = in_poly($poly, (float)$lat, (float)$lng);
+        $d = $inside ? 0.0 : poly_edge_m($poly, (float)$lat, (float)$lng);
+        if (!$inside && $d > min(max($acc, 0.0), 20.0)) {
+            save($S, false);
+            $far = $d >= 1000 ? round($d / 1000, 1) . ' كم' : (string)(int)round($d) . ' متر';
+            out(403, ['error' => 'far', 'dist' => (int)round($d), 'name' => $first, 'msg' => 'أنت خارج حدود الجامعة، وتبعد عن سورها قرابة ' . $far . '. سجّل حضورك من داخل الجامعة.']);
+        }
+    } elseif (($d = dist_m((float)$z['lat'], (float)$z['lng'], (float)$lat, (float)$lng)) > (float)$z['r'] + min(max($acc, 0.0), 60.0)) {
+        save($S, false);
+        $far = $d >= 1000 ? round($d / 1000, 1) . ' كم' : (string)(int)round($d) . ' متر';
+        out(403, ['error' => 'far', 'dist' => (int)round($d), 'name' => $first, 'msg' => 'أنت خارج منطقة الجامعة، وتبعد عنها قرابة ' . $far . '. سجّل حضورك من داخل الجامعة.']);
+    }
+    $day = date('Y-m-d');
+    $already = isset($S['orgs'][$oid]['att'][$day]);
+    if (!$already) $S['orgs'][$oid]['att'][$day] = ['t' => now_ms(), 'd' => (int)round($d), 'by' => 'gps'];
+    $S['orgs'][$oid]['last'] = now_ms();
+    save($S, !$already);
+    $uid = $S['orgs'][$oid]['uid'] ?? null;
+    out(200, ['ok' => true, 'name' => $first, 'full' => $S['orgs'][$oid]['n'], 'already' => $already, 't' => $S['orgs'][$oid]['att'][$day]['t'],
+        'access' => $uid !== null && isset($S['users'][$uid])]);
+}
+
+$me = auth($S, token());
+if (!$me) out(401, ['error' => 'auth', 'msg' => 'انتهت الجلسة، سجّل دخول مرة ثانية']);
+$admin = $me['role'] === 'admin';
+function deny(string $msg = 'هاي مو من صلاحياتك'): void { out(403, ['error' => 'perm', 'msg' => $msg]); }
+function odone(array &$S, array $me, array $res = []): void {
+    $S['users'][$me['uid']]['seen'] = time();
+    save($S);
+    out(200, array_merge(['ok' => true], $res, org_res($S)));
+}
+function done(array &$S, array $me, array $res = ['ok' => true], bool $bump = true): void {
+    $S['users'][$me['uid']]['seen'] = time();
+    save($S, $bump);
+    $res['state'] = public_state($S, $me);
+    out(200, $res);
+}
+
+switch ($r) {
+    case 'checkin': {
+        if (!can($me, 'checkin')) deny('تسجيل الضيوف مو من صلاحياتك');
+        $name = trim((string)($b['name'] ?? ''));
+        $cat = $b['cat'] ?? '';
+        $want = (string)($b['seat'] ?? '');
+        $gid = (string)($b['guestId'] ?? '');
+        $move = !empty($b['move']);
+        if ($name === '') out(400, ['error' => 'name', 'msg' => 'اكتب اسم الضيف']);
+        if (!in_array($cat, ['VIP', 'عادي'], true)) out(400, ['error' => 'cat', 'msg' => 'اختار الفئة']);
+        $g = ($gid !== '' && isset($S['guests'][$gid])) ? $S['guests'][$gid] : null;
+        if ($g && !empty($g['s']) && isset($S['seats'][$g['s']])) {
+            if (!$move) out(409, ['error' => 'already', 'seat' => $g['s'], 'msg' => 'الضيف مسجل مسبقاً']);
+            if (!can($me, 'move')) deny('نقل الضيف لكرسي ثاني مو من صلاحياتك');
+            unset($S['seats'][$g['s']]);
+            $S['guests'][$gid]['s'] = null;
+        }
+        $gd = in_array($b['gd'] ?? null, ['m', 'f'], true) ? $b['gd'] : (in_array($g['gd'] ?? null, ['m', 'f'], true) ? $g['gd'] : null);
+        $seat = null;
+        if ($want !== '' && seat_rc($want) && !isset($S['seats'][$want])) {
+            [$wr, $wc] = seat_rc($want); $zg = zone_g($wr, $wc);
+            if ($gd && $gd !== $zg) out(409, ['error' => 'gender', 'msg' => 'هذا الكرسي مخصّص ' . g_lbl($zg) . ' فقط']);
+            $seat = $want; $cat = cat_of_seat($want); $gd = $zg;
+        }
+        if (!$seat) {
+            if (!$gd) out(400, ['error' => 'gd', 'msg' => 'اختار الفئة: رجال أو نساء']);
+            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (seat_ok($rr, $cc) && is_vip($rr, $cc) === ($cat === 'VIP') && zone_g($rr, $cc) === $gd && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
+        }
+        if (!$seat) out(409, ['error' => 'full', 'msg' => 'ماكو مقاعد فارغة بهذي الفئة (' . ($cat === 'VIP' ? 'VIP' : 'عادي') . ' ' . ($gd === 'm' ? 'رجال' : 'نساء') . ')']);
+        if (!$g) { $gid = 'g' . rid(5); $S['guests'][$gid] = ['n' => mb_substr($name, 0, 80), 'c' => $cat, 's' => null]; }
+        $S['guests'][$gid]['s'] = $seat; $S['guests'][$gid]['c'] = $cat; $S['guests'][$gid]['gd'] = $gd;
+        $S['seats'][$seat] = ['n' => $S['guests'][$gid]['n'], 'c' => $cat, 't' => now_ms(), 'g' => $gid, 'by' => $me['name'], 'bu' => $me['uid']];
+        $job = can($me, 'print') ? add_job($S, $me, $seat, $S['guests'][$gid]['n']) : null;
+        done($S, $me, ['ok' => true, 'seat' => $seat, 'guestId' => $gid, 'job' => $job]);
+    }
+    case 'reprint': {
+        if (!can($me, 'reprint')) deny('إعادة الطباعة مو من صلاحياتك');
+        $sid = (string)($b['seat'] ?? '');
+        if (!seat_rc($sid) || !isset($S['seats'][$sid])) out(404, ['error' => 'nf', 'msg' => 'الكرسي فارغ']);
+        $job = add_job($S, $me, $sid, $S['seats'][$sid]['n'], 'reprint');
+        done($S, $me, ['ok' => true, 'job' => $job]);
+    }
+    case 'chair-print': {
+        if (!can($me, 'print')) deny('الطباعة مو من صلاحياتك');
+        $sid = (string)($b['seat'] ?? '');
+        if (!preg_match('/^R(\d+)-(\d+)$/', $sid, $mm) || $mm[1] < 1 || $mm[1] > ROWS || $mm[2] < 1 || $mm[2] > COLS || !seat_ok((int)$mm[1], (int)$mm[2])) out(400, ['error' => 'seat', 'msg' => 'كرسي غير صحيح']);
+        $job = add_job($S, $me, $sid, 'ستكر كرسي', 'chair');
+        done($S, $me, ['ok' => true, 'job' => $job]);
+    }
+    case 'test-print': {
+        $job = add_job($S, $me, 'R1-13', 'ستكر تجريبي', 'test');
+        done($S, $me, ['ok' => true, 'job' => $job]);
+    }
+    case 'jobs/mark': {
+        if (!$admin) deny();
+        $id = (int)($b['id'] ?? 0); $stt = (string)($b['st'] ?? '');
+        if (!in_array($stt, ['new', 'printed', 'done', 'cancel'], true)) out(400, ['error' => 'st']);
+        foreach ($S['jobs'] as &$j) if ($j['id'] === $id) {
+            $j['st'] = $stt;
+            if ($stt === 'printed') { $j['pt'] = now_ms(); $j['pBy'] = $me['name']; }
+            if ($stt === 'done') $j['dt'] = now_ms();
+        }
+        unset($j);
+        done($S, $me);
+    }
+    case 'jobs/take': {
+        // مدير ياخذ طلب من طابور مدير ثاني
+        if (!$admin) deny();
+        $id = (int)($b['id'] ?? 0);
+        foreach ($S['jobs'] as &$j) if ($j['id'] === $id) { $j['to'] = $me['uid']; $j['toName'] = $me['name']; }
+        unset($j);
+        done($S, $me);
+    }
+    case 'free': {
+        if (!can($me, 'free')) deny('تفريغ الكرسي مو من صلاحياتك');
+        $sid = (string)($b['seat'] ?? '');
+        $d = $S['seats'][$sid] ?? null;
+        unset($S['seats'][$sid]);
+        if ($d && isset($S['guests'][$d['g'] ?? ''])) $S['guests'][$d['g']]['s'] = null;
+        done($S, $me);
+    }
+    case 'guests/add': {
+        if (!can($me, 'guests')) deny();
+        $n = 0;
+        foreach ((array)($b['items'] ?? []) as $it) {
+            $nm = trim((string)($it['n'] ?? ''));
+            if ($nm === '') continue;
+            $S['guests']['g' . rid(5)] = ['n' => mb_substr($nm, 0, 80), 'c' => ($it['c'] ?? '') === 'VIP' ? 'VIP' : 'عادي', 's' => null] + (in_array($it['gd'] ?? null, ['m', 'f'], true) ? ['gd' => $it['gd']] : []);
+            $n++;
+        }
+        done($S, $me, ['ok' => true, 'added' => $n]);
+    }
+    case 'guests/delete': {
+        if (!can($me, 'guests')) deny();
+        $gid = (string)($b['id'] ?? '');
+        $g = $S['guests'][$gid] ?? null;
+        unset($S['guests'][$gid]);
+        if ($g && !empty($g['s'])) unset($S['seats'][$g['s']]);
+        done($S, $me);
+    }
+    case 'reset': {
+        if (!$admin) deny();
+        $S['seats'] = [];
+        foreach ($S['guests'] as &$g) $g['s'] = null;
+        unset($g);
+        foreach ($S['jobs'] as &$j) if ($j['st'] === 'new') $j['st'] = 'cancel';
+        unset($j);
+        done($S, $me);
+    }
+    case 'settings': {
+        if (!$admin) deny();
+        $s = &$S['settings'];
+        foreach (['stickerW', 'stickerH'] as $k) if (isset($b[$k])) $s[$k] = max(20, min(200, (int)$b[$k]));
+        foreach (['title', 'subtitle'] as $k) if (isset($b[$k]) && is_string($b[$k])) { $v = mb_substr(trim($b[$k]), 0, 90); if ($v !== '' || $k === 'subtitle') $s[$k] = $v; }
+        if (in_array($b['printMode'] ?? null, ['auto', 'tspl', 'browser'], true)) $s['printMode'] = $b['printMode'];
+        foreach ([['gap', 0, 10], ['density', 1, 15], ['offsetX', -15, 15]] as [$k, $lo, $hi]) if (isset($b[$k]) && is_numeric($b[$k])) $s[$k] = max($lo, min($hi, $k === 'density' ? (int)$b[$k] : (float)$b[$k]));
+        if (array_key_exists('flip', $b)) $s['flip'] = (bool)$b['flip'];
+        unset($s);
+        done($S, $me, ['ok' => true, 'settings' => $S['settings']]);
+    }
+    case 'users/add':
+    case 'users/update': {
+        if (!$admin) deny();
+        $upd = $r === 'users/update';
+        $uid = $upd ? (string)($b['id'] ?? '') : 'u' . rid(4);
+        if ($upd && !isset($S['users'][$uid])) out(404, ['error' => 'nf', 'msg' => 'الحساب مو موجود']);
+        $u = $upd ? $S['users'][$uid] : ['created' => time()];
+        if (!$upd || isset($b['name'])) {
+            $name = mb_substr(trim((string)($b['name'] ?? '')), 0, 40);
+            if ($name === '') out(400, ['error' => 'name', 'msg' => 'اكتب اسم الشخص']);
+            $u['name'] = $name;
+        }
+        $pin = (string)($b['pin'] ?? '');
+        if (!$upd || $pin !== '') {
+            if (!valid_pin($pin)) out(400, ['error' => 'pin', 'msg' => 'الرمز لازم يكون أرقام، من 4 إلى 8']);
+            $other = user_by_pin($S, $pin);
+            if ($other && $other !== $uid) out(409, ['error' => 'pin', 'msg' => 'هذا الرمز مستخدم لحساب ثاني، اختار رمز غيره']);
+            $u['salt'] = rid(8); $u['hash'] = hash_pin($pin, $u['salt']);
+        }
+        if (!$upd || isset($b['role'])) {
+            $role = ($b['role'] ?? '') === 'admin' ? 'admin' : 'staff';
+            if ($upd && $u['role'] === 'admin' && $role !== 'admin' && count(admins($S)) <= 1) out(400, ['error' => 'last', 'msg' => 'لازم يبقى مدير واحد على الأقل']);
+            if ($upd && $uid === $me['uid'] && $role !== 'admin') out(400, ['error' => 'self', 'msg' => 'ما تگدر تشيل صلاحية المدير من نفسك']);
+            $u['role'] = $role;
+        }
+        if (!$upd || isset($b['task'])) $u['task'] = mb_substr(trim((string)($b['task'] ?? '')), 0, 80);
+        if (!$upd || array_key_exists('sup', $b)) {
+            $sup = (string)($b['sup'] ?? '');
+            $u['sup'] = ($sup !== '' && $sup !== $uid && isset($S['users'][$sup]) && $S['users'][$sup]['role'] === 'admin') ? $sup : null;
+        }
+        if (!$upd || isset($b['perms'])) $u['perms'] = isset($b['perms']) ? clean_perms($b['perms']) : DEFAULT_PERMS;
+        $S['users'][$uid] = $u;
+        done($S, $me, ['ok' => true, 'id' => $uid]);
+    }
+    case 'users/delete': {
+        if (!$admin) deny();
+        $uid = (string)($b['id'] ?? '');
+        $u = $S['users'][$uid] ?? null;
+        if (!$u) out(404, ['error' => 'nf', 'msg' => 'الحساب مو موجود']);
+        if ($uid === $me['uid']) out(400, ['error' => 'self', 'msg' => 'ما تگدر تحذف حسابك وانت داخل بيه']);
+        if ($u['role'] === 'admin' && count(admins($S)) <= 1) out(400, ['error' => 'last', 'msg' => 'لازم يبقى مدير واحد على الأقل']);
+        remove_user($S, $uid);
+        done($S, $me);
+    }
+    case 'orgs/list': {
+        if (!$admin) deny();
+        out(200, array_merge(['ok' => true], org_res($S)));
+    }
+    case 'backup': {
+        if (!$admin) deny();
+        $o = $S; unset($o['sessions'], $o['fails'], $o['ofails'], $o['oform']);
+        $bk = glob(data_dir() . '/backups/data-*.json') ?: [];
+        out(200, ['ok' => true, 't' => date('Y-m-d H:i'), 'serverBackups' => count($bk), 'data' => $o]);
+    }
+    case 'orgs/save': {
+        if (!$admin) deny();
+        $id = (string)($b['id'] ?? '');
+        $upd = $id !== '' && isset($S['orgs'][$id]);
+        $o = org_clean($b, $upd ? $S['orgs'][$id] : ['att' => [], 'uid' => null, 'pin' => null, 'ct' => time()]);
+        if ($o['n'] === '') out(400, ['error' => 'name', 'msg' => 'اكتب اسم المنظم']);
+        if ($o['ph'] !== '') foreach ($S['orgs'] as $k => $x) if ((string)$k !== $id && ($x['ph'] ?? '') === $o['ph']) out(409, ['error' => 'dup', 'msg' => 'هذا الرقم مسجّل لمنظم آخر: ' . $x['n']]);
+        if (!$upd) $id = 'o' . rid(4);
+        $S['orgs'][$id] = $o;
+        if (!empty($o['uid']) && isset($S['users'][$o['uid']])) $S['users'][$o['uid']]['name'] = mb_substr($o['n'], 0, 40);
+        odone($S, $me, ['id' => $id]);
+    }
+    case 'orgs/import': {
+        if (!$admin) deny();
+        $n = 0; $skip = 0;
+        foreach ((array)($b['items'] ?? []) as $it) {
+            if (!is_array($it)) continue;
+            $o = org_clean($it, ['att' => [], 'uid' => null, 'pin' => null, 'ct' => time()]);
+            if ($o['n'] === '') continue;
+            $dup = false;
+            foreach ($S['orgs'] as $x) if (($o['ph'] !== '' && ($x['ph'] ?? '') === $o['ph']) || ($o['ph'] === '' && ($x['n'] ?? '') === $o['n'])) { $dup = true; break; }
+            if ($dup) { $skip++; continue; }
+            $S['orgs']['o' . rid(4)] = $o;
+            $n++;
+        }
+        odone($S, $me, ['added' => $n, 'skipped' => $skip]);
+    }
+    case 'teams/save': {
+        if (!$admin) deny();
+        $id = (string)($b['id'] ?? '');
+        $upd = $id !== '' && isset($S['teams'][$id]);
+        $t = $upd ? $S['teams'][$id] : ['ct' => now_ms()];
+        $t['n'] = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['n'] ?? ''))), 0, 40);
+        if ($t['n'] === '') out(400, ['error' => 'name', 'msg' => 'اكتب اسم الفريق']);
+        $c = (string)($b['color'] ?? '');
+        $t['color'] = preg_match('/^#[0-9a-fA-F]{6}$/', $c) ? $c : ($t['color'] ?? '#5a1238');
+        foreach ([['place', 60], ['task', 160]] as [$k, $n]) $t[$k] = mb_substr(trim((string)($b[$k] ?? '')), 0, $n);
+        $m = [];
+        foreach ((array)($b['m'] ?? []) as $x) { $x = (string)$x; if (isset($S['orgs'][$x]) && !in_array($x, $m, true)) $m[] = $x; }
+        $t['m'] = $m;
+        $lead = (string)($b['lead'] ?? '');
+        $t['lead'] = in_array($lead, $m, true) ? $lead : null;
+        foreach (['x' => [0, 1], 'y' => [0, 1], 'r' => [0.02, 0.35]] as $k => [$lo, $hi])
+            if (is_numeric($b[$k] ?? null)) $t[$k] = round(max($lo, min($hi, (float)$b[$k])), 4); elseif (!isset($t[$k])) $t[$k] = null;
+        if (!$upd) $id = 't' . rid(3);
+        // المنظم يكون بفريق واحد بس
+        foreach ($S['teams'] as $k => $o) if ((string)$k !== $id) {
+            $S['teams'][$k]['m'] = array_values(array_diff((array)($o['m'] ?? []), $m));
+            if (!in_array($S['teams'][$k]['lead'] ?? null, $S['teams'][$k]['m'], true)) $S['teams'][$k]['lead'] = null;
+        }
+        $S['teams'][$id] = $t;
+        odone($S, $me, ['tid' => $id]);
+    }
+    case 'teams/delete': {
+        if (!$admin) deny();
+        unset($S['teams'][(string)($b['id'] ?? '')]);
+        odone($S, $me);
+    }
+    case 'orgs/delete': {
+        if (!$admin) deny();
+        $id = (string)($b['id'] ?? '');
+        $o = $S['orgs'][$id] ?? null;
+        if (!$o) out(404, ['error' => 'nf', 'msg' => 'المنظم غير موجود']);
+        $uid = $o['uid'] ?? null;
+        if ($uid && isset($S['users'][$uid])) {
+            if ($uid === $me['uid']) out(400, ['error' => 'self', 'msg' => 'ما تگدر تحذف حسابك وانت داخل بيه']);
+            if ($S['users'][$uid]['role'] === 'admin' && count(admins($S)) <= 1) out(400, ['error' => 'last', 'msg' => 'لازم يبقى مدير واحد على الأقل']);
+            remove_user($S, $uid);
+        }
+        unset($S['orgs'][$id]);
+        odone($S, $me);
+    }
+    case 'orgs/access': {
+        if (!$admin) deny();
+        $id = (string)($b['id'] ?? '');
+        if (!isset($S['orgs'][$id])) out(404, ['error' => 'nf', 'msg' => 'المنظم غير موجود']);
+        $o = $S['orgs'][$id];
+        $uid = $o['uid'] ?? null;
+        $has = $uid && isset($S['users'][$uid]);
+        $role = ($b['role'] ?? '') === 'admin' ? 'admin' : 'staff';
+        if ($has && $uid === $me['uid'] && $role !== 'admin') out(400, ['error' => 'self', 'msg' => 'ما تگدر تشيل صلاحية المدير من نفسك']);
+        if ($has && $S['users'][$uid]['role'] === 'admin' && $role !== 'admin' && count(admins($S)) <= 1) out(400, ['error' => 'last', 'msg' => 'لازم يبقى مدير واحد على الأقل']);
+        $sup = (string)($b['sup'] ?? '');
+        $sup = ($role !== 'admin' && $sup !== '' && isset($S['users'][$sup]) && $S['users'][$sup]['role'] === 'admin') ? $sup : null;
+        $pin = (!$has || empty($o['pin']) || !empty($b['regen'])) ? new_pin($S) : null;
+        if (!$has) { $uid = 'u' . rid(4); $S['users'][$uid] = ['created' => time()]; }
+        $u = $S['users'][$uid];
+        $u['name'] = mb_substr($o['n'], 0, 40);
+        $u['role'] = $role;
+        $u['perms'] = $role === 'admin' ? PERMS : clean_perms($b['perms'] ?? DEFAULT_PERMS);
+        $u['task'] = mb_substr(trim((string)($b['task'] ?? '')), 0, 80);
+        $u['sup'] = $sup;
+        $u['org'] = $id;
+        if ($pin !== null) {
+            $u['salt'] = rid(8); $u['hash'] = hash_pin($pin, $u['salt']);
+            $S['orgs'][$id]['pin'] = $pin;
+            foreach ($S['sessions'] as $t => $se) if ($se['uid'] === $uid) unset($S['sessions'][$t]);
+        }
+        $S['users'][$uid] = $u;
+        $S['orgs'][$id]['uid'] = $uid;
+        odone($S, $me, ['id' => $id, 'pin' => $S['orgs'][$id]['pin']]);
+    }
+    case 'orgs/revoke': {
+        if (!$admin) deny();
+        $id = (string)($b['id'] ?? '');
+        if (!isset($S['orgs'][$id])) out(404, ['error' => 'nf', 'msg' => 'المنظم غير موجود']);
+        $uid = $S['orgs'][$id]['uid'] ?? null;
+        if ($uid && isset($S['users'][$uid])) {
+            if ($uid === $me['uid']) out(400, ['error' => 'self', 'msg' => 'ما تگدر تسحب دخولك وانت داخل']);
+            if ($S['users'][$uid]['role'] === 'admin' && count(admins($S)) <= 1) out(400, ['error' => 'last', 'msg' => 'لازم يبقى مدير واحد على الأقل']);
+            remove_user($S, $uid);
+        }
+        $S['orgs'][$id]['uid'] = null; $S['orgs'][$id]['pin'] = null;
+        odone($S, $me);
+    }
+    case 'orgs/mark': {
+        if (!$admin) deny();
+        $id = (string)($b['id'] ?? '');
+        if (!isset($S['orgs'][$id])) out(404, ['error' => 'nf', 'msg' => 'المنظم غير موجود']);
+        $day = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($b['day'] ?? '')) ? (string)$b['day'] : date('Y-m-d');
+        if (!empty($b['on'])) { if (!isset($S['orgs'][$id]['att'][$day])) $S['orgs'][$id]['att'][$day] = ['t' => now_ms(), 'd' => null, 'by' => $me['name']]; }
+        else unset($S['orgs'][$id]['att'][$day]);
+        odone($S, $me);
+    }
+    case 'zone/set': {
+        if (!$admin) deny();
+        $z = $S['settings']['zone'];
+        if (array_key_exists('lat', $b) || array_key_exists('lng', $b)) {
+            $la = $b['lat'] ?? null; $lo = $b['lng'] ?? null;
+            if (!is_numeric($la) || !is_numeric($lo) || abs((float)$la) > 90 || abs((float)$lo) > 180) out(400, ['error' => 'loc', 'msg' => 'الإحداثيات غير صحيحة']);
+            $z['lat'] = round((float)$la, 6); $z['lng'] = round((float)$lo, 6);
+        }
+        if (isset($b['r']) && is_numeric($b['r'])) $z['r'] = max(50, min(3000, (int)$b['r']));
+        if (array_key_exists('poly', $b)) {
+            $pp = $b['poly'];
+            if ($pp === null || $pp === [] || $pp === false) $z['poly'] = null;
+            else {
+                if (!is_array($pp) || count($pp) < 3 || count($pp) > 300) out(400, ['error' => 'poly', 'msg' => 'حدود المنطقة غير صحيحة']);
+                $q = [];
+                foreach ($pp as $pt) {
+                    if (!is_array($pt) || !is_numeric($pt[0] ?? null) || !is_numeric($pt[1] ?? null) || abs((float)$pt[0]) > 90 || abs((float)$pt[1]) > 180) out(400, ['error' => 'poly', 'msg' => 'حدود المنطقة غير صحيحة']);
+                    $q[] = [round((float)$pt[0], 7), round((float)$pt[1], 7)];
+                }
+                $z['poly'] = $q;
+                if (!array_key_exists('lat', $b)) { $z['lat'] = round(array_sum(array_column($q, 0)) / count($q), 6); $z['lng'] = round(array_sum(array_column($q, 1)) / count($q), 6); }
+            }
+        }
+        if (array_key_exists('on', $b)) $z['on'] = (bool)$b['on'];
+        if (!empty($z['on']) && !zone_poly($z) && !is_numeric($z['lat'] ?? null)) out(400, ['error' => 'loc', 'msg' => 'حدّد موقع الجامعة أول']);
+        $S['settings']['zone'] = $z;
+        odone($S, $me);
+    }
+    case 'logout': {
+        unset($S['sessions'][$me['token']]);
+        save($S, false);
+        out(200, ['ok' => true]);
+    }
+    // أوامر الجهاز المحلي (محطات الطباعة القديمة) ما إلها معنى بالنسخة الأونلاين
+    case 'jobs/next': out(200, ['job' => null]);
+    case 'jobs/skip-old':
+    case 'station/off': out(200, ['ok' => true]);
+}
+out(404, ['error' => 'nf']);
