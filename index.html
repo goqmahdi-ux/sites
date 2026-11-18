@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<base href="/isc/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1st ISC 2026 — منصة العروض</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@200;300;400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: formal, ceremonial conference — العروش للفعاليات
+   IDEA: the 1st ISC 2026 conference kit — periwinkle gradient, flowing white line-waves, partner logos on top
+   PICTURE: full-screen slide stage, a living white line orbiting the screen edge = the 15-minute clock
+   COLOUR and TYPE: conference blue→lilac gradient, white ink, navy #1D3152; IBM Plex Sans Arabic light + Inter
+   LAYOUT: lobby (search by name → research grid) → ready card → stage */
+:root{color-scheme:dark;--bg:#5468c6;--grad:linear-gradient(135deg,#4559bd 0%,#6880d8 42%,#8a95dc 72%,#a08bcf 100%);--navy:#1D3152;--card:rgba(255,255,255,.13);--line:rgba(255,255,255,.28);--ink:#fff;--mute:#dfe5ff;--gold:#ffffff;--gold2:#ffffff;--warn:#ffb547;--red:#ff4d5e}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--grad) fixed;color:var(--ink);font:16px/1.6 "IBM Plex Sans Arabic",system-ui,sans-serif;overflow-x:clip}
+.lat{font-family:Inter,system-ui,sans-serif;direction:ltr;unicode-bidi:isolate}
+button{font:inherit;cursor:pointer}
+.hide{display:none!important}
+/* lobby */
+#lobby{min-height:100%;position:relative;isolation:isolate;overflow:hidden}
+.waves{position:absolute;left:0;right:0;bottom:0;width:100%;height:46%;z-index:-1;pointer-events:none;opacity:.55}
+.orb{position:absolute;border-radius:50%;z-index:-1;pointer-events:none;background:radial-gradient(circle at 35% 30%,#a9d6ff,#7d8fe0 45%,#b48fd0 72%,transparent 74%);opacity:.5}
+.logos{display:flex;direction:ltr;align-items:center;justify-content:center;gap:clamp(14px,2.4vw,40px);flex-wrap:wrap}
+.logos img{height:var(--lh,56px);width:auto;display:block}
+.logos img.isc{height:calc(var(--lh,56px)*1.15)}
+.uro{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:13px}
+.uro img{height:26px;width:auto}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px max(5vw,16px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{width:44px;height:44px}
+.brand b{font:700 20px/1.1 "IBM Plex Sans Arabic";display:block}
+.brand span{font-size:13px;color:var(--mute)}
+.clock{font:500 15px Inter;color:var(--mute)}
+.hero{padding:clamp(28px,5vw,64px) max(5vw,16px) 24px;text-align:center}
+.hero h1{font:300 clamp(30px,4.6vw,52px)/1.15 "IBM Plex Sans Arabic";margin:0 0 10px;text-wrap:balance}
+.hero p{color:var(--mute);margin:0 auto 26px;max-width:620px}
+.search{max-width:640px;margin:0 auto;position:relative}
+.search input{width:100%;height:64px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--navy);font:500 20px "IBM Plex Sans Arabic";padding:0 22px 0 60px;outline:none}
+.search input:focus{border-color:var(--gold);box-shadow:0 0 0 4px #d9b25f22}
+.search input::-webkit-search-cancel-button{display:none}
+.search svg{position:absolute;left:20px;top:21px;width:22px;height:22px;stroke:#5468c6}
+.search input::placeholder{color:#8a95c4}
+header.top{flex-wrap:wrap}
+.meta{display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;color:var(--mute);border-radius:99px;padding:8px 16px;min-height:40px}
+.chip:hover,.chip:focus-visible{border-color:var(--gold);color:var(--gold2);outline:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:18px;padding:12px max(5vw,16px) 60px;max-width:1400px;margin:0 auto}
+.card{backdrop-filter:blur(10px);background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;text-align:start;color:inherit;padding:0;display:flex;flex-direction:column;transition:transform .2s,border-color .2s}
+.card:hover,.card:focus-visible{transform:translateY(-3px);border-color:var(--gold);outline:none}
+.thumb{aspect-ratio:16/9;background:#fff center/contain no-repeat;position:relative}
+.thumb i{position:absolute;top:10px;right:10px;font:700 13px Inter;font-style:normal;background:var(--navy);color:#fff;border-radius:8px;padding:3px 9px}
+.thumb em{position:absolute;bottom:10px;left:10px;font:500 12px Inter;font-style:normal;background:#000a;color:#fff;border-radius:8px;padding:2px 8px}
+.cb{padding:14px 16px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.cb .who{font:600 17px "IBM Plex Sans Arabic";color:#fff}
+.cb .ttl{font-size:14px;color:var(--ink);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cb .sp{font-size:13px;color:var(--mute)}
+.done{opacity:.55}.done .thumb::after{content:"تم العرض";position:absolute;inset:auto auto 10px 10px;background:#1d7a46;color:#fff;font-size:12px;border-radius:8px;padding:2px 8px}
+.empty{text-align:center;color:var(--mute);grid-column:1/-1;padding:40px}
+footer{text-align:center;color:var(--mute);font-size:13px;padding:0 16px 30px}
+kbd{font:600 12px Inter;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px;color:var(--ink)}
+/* ready */
+#ready{position:fixed;inset:0;background:var(--grad);display:grid;place-items:center;padding:20px;z-index:20}
+.rc{max-width:860px;width:100%;text-align:center}
+.rc .logos{--lh:52px;margin-bottom:28px}
+.rc small{color:var(--gold);font-weight:600}
+.rc h2{font:700 clamp(32px,5vw,58px)/1.15 "IBM Plex Sans Arabic";margin:8px 0 6px}
+.rc .ttl{font-size:clamp(17px,2vw,22px);color:var(--ink);margin:0 auto 6px;max-width:760px}
+.rc .sp{color:var(--mute);margin-bottom:28px}
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{min-height:52px;border-radius:14px;padding:0 26px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:600}
+.btn.pri{background:#fff;color:#3b4fae;border:0;font:700 19px "IBM Plex Sans Arabic";padding:0 38px}
+.btn:focus-visible{outline:3px solid var(--gold2);outline-offset:3px}
+.opts{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:22px;color:var(--mute);font-size:14px;align-items:center}
+.opts select{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;height:40px;padding:0 10px;font:inherit}
+.opts label{display:flex;gap:8px;align-items:center}
+.note{margin-top:14px;font-size:13px;color:var(--warn)}
+/* stage */
+#stage{position:fixed;inset:0;background:linear-gradient(160deg,#22346b,#3a4c9c 60%,#5b5aa6);z-index:30;cursor:none;user-select:none}
+#stage.ui{cursor:default}
+.sband{position:absolute;top:0;left:0;right:0;height:clamp(54px,7vh,78px);z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 clamp(18px,2vw,30px);background:linear-gradient(90deg,#4559bd,#6f84d9 55%,#9a8bd0);border-bottom:1px solid #ffffff30}
+.sband .logos{--lh:clamp(28px,4.4vh,44px);justify-content:flex-start;flex-wrap:nowrap}
+.sband .uro img{height:clamp(20px,3vh,30px)}
+.slide{position:absolute;inset:calc(clamp(54px,7vh,78px) + 12px) clamp(12px,1.6vw,22px) clamp(12px,1.6vw,22px);display:grid;place-items:center}
+.slide img,.slide canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 20px 50px #0007);opacity:0;transition:opacity .28s}
+.slide img.on,.slide canvas.on{opacity:1}
+#ring{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+#ring .track{fill:none;stroke:#ffffff12;stroke-width:6}
+#ring .live{fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;filter:drop-shadow(0 0 6px var(--gold));transition:stroke .6s}
+#ring circle{fill:#fff;filter:drop-shadow(0 0 10px var(--gold2)) drop-shadow(0 0 4px #fff)}
+#stage.warn #ring .live{stroke:var(--warn);filter:drop-shadow(0 0 8px var(--warn))}
+#stage.last #ring .live{stroke:var(--red);filter:drop-shadow(0 0 10px var(--red));animation:pulse 1s infinite}
+#stage.over #ring .track{stroke:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.45}}
+.timechip{position:absolute;bottom:16px;left:16px;z-index:4;font:700 18px Inter;background:#000b;color:#fff;border-radius:12px;padding:6px 12px;border:1px solid #ffffff22;direction:ltr}
+#stage.warn .timechip{color:var(--warn)}
+#ring .live{stroke:#fff;filter:drop-shadow(0 0 6px #9fd0ff)}#stage.last .timechip,#stage.over .timechip{color:#fff;background:#c21d1d}
+.timechip.hide2{opacity:0}
+.intro{position:absolute;inset:0;z-index:2;display:grid;place-items:center;text-align:center;background:var(--grad);overflow:hidden;isolation:isolate;padding:40px;transition:opacity .6s}
+.crown{display:block}
+.intro .crown{width:90px;height:90px;margin:0 auto 14px}
+.intro small{color:var(--gold);font-weight:600;font-size:18px}
+.intro .logos{--lh:clamp(48px,7vh,84px);margin-bottom:clamp(26px,5vh,60px)}
+.intro .uro{justify-content:center;margin-top:clamp(24px,4vh,48px)}.intro .uro img{height:34px}
+.intro h2{font:600 clamp(40px,6vw,80px)/1.1 "IBM Plex Sans Arabic";margin:10px 0}
+.intro p{font-size:clamp(18px,2.2vw,28px);max-width:1100px;margin:0 auto 8px}
+.intro .sp{color:var(--mute);font-size:clamp(15px,1.5vw,20px)}
+.thanks{z-index:4;animation:fadeIn .8s}.thanks h2{color:#fff;font-weight:300}@keyframes fadeIn{from{opacity:0}}
+.intro .hint{margin-top:30px;color:var(--mute);font-size:14px}
+.bar{direction:ltr;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:6px;align-items:center;background:#120509e6;border:1px solid #ffffff1c;border-radius:16px;padding:6px;opacity:0;transition:opacity .25s;pointer-events:none;backdrop-filter:blur(8px)}
+#stage.ui .bar{opacity:1;pointer-events:auto}
+.bar button{min-width:44px;height:44px;border-radius:11px;border:0;background:transparent;color:var(--ink);display:grid;place-items:center;padding:0 10px;font-size:14px}
+.bar button:hover{background:#ffffff14}
+.bar svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.bar .cnt{font:600 14px Inter;color:var(--mute);padding:0 10px;direction:ltr}
+.strip{position:absolute;left:0;right:0;bottom:84px;z-index:5;display:flex;gap:8px;overflow-x:auto;padding:10px 20px;background:#0d0408e6;direction:ltr}
+.strip img{height:80px;border-radius:4px;border:2px solid transparent;cursor:pointer;background:#fff;flex:none}
+.strip img.cur{border-color:var(--gold)}
+.endmsg{position:absolute;top:calc(clamp(54px,7vh,78px) + 16px);right:50%;transform:translateX(50%);z-index:4;background:#c21d1d;color:#fff;font:700 18px "IBM Plex Sans Arabic";padding:8px 20px;border-radius:12px}
+.toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:6;background:#000c;color:#fff;padding:8px 16px;border-radius:10px;font-size:14px;transition:opacity .4s}
+#busy{position:fixed;inset:0;z-index:50;background:#000c;display:grid;place-items:center;color:#fff;font:600 18px "IBM Plex Sans Arabic"}
+@media(max-width:600px){header.top .clock{display:none}.bar .cnt{padding:0 4px}.bar button{min-width:40px;padding:0 6px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>
+/* system layer: doctor kiosk, admin console, live control */
+.finder{max-width:760px;margin:0 auto}
+.results{display:grid;gap:14px;max-width:900px;margin:22px auto 0;padding:0 max(5vw,16px)}
+.res{display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:18px;align-items:center;text-align:start;background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:18px;padding:12px;color:inherit;transition:border-color .2s,transform .2s}
+.res:hover,.res:focus-visible{border-color:#fff;transform:translateY(-2px);outline:none}
+.res .th{aspect-ratio:16/9;background:#fff center/contain no-repeat;border-radius:10px}
+.res .who{font:600 22px "IBM Plex Sans Arabic"}
+.res .ttl{font-size:15px;color:var(--mute);margin-top:4px}
+.res .go{background:#fff;color:#3b4fae;border-radius:12px;padding:10px 18px;font-weight:700;white-space:nowrap}
+.res.done{opacity:.6}
+.tag{display:inline-block;font-size:12px;border-radius:99px;padding:2px 10px;margin-inline-start:8px;vertical-align:middle;background:#ffffff26;color:#fff}
+.tag.live{background:#ff4d5e}.tag.done{background:#1f8f57}
+.hintline{color:var(--mute);text-align:center;margin-top:18px;font-size:15px}
+.nextup{max-width:900px;margin:26px auto 0;padding:0 max(5vw,16px)}
+.nextup h3{font:500 15px "IBM Plex Sans Arabic";color:var(--mute);margin:0 0 10px}
+.adminlink{background:none;border:0;color:var(--mute);text-decoration:underline;font-size:13px;min-height:44px}
+/* modal */
+.modal{position:fixed;inset:0;z-index:60;background:#0f1a3acc;display:grid;place-items:center;padding:16px}
+.mbox{background:#fff;color:var(--navy);border-radius:20px;width:min(560px,100%);max-height:92vh;overflow:auto;padding:24px}
+.mbox h3{margin:0 0 14px;font:600 22px "IBM Plex Sans Arabic"}
+.mbox label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
+.mbox input,.mbox select,.mbox textarea{width:100%;min-height:46px;border:1px solid #c9d0ee;border-radius:12px;padding:8px 12px;font:16px "IBM Plex Sans Arabic";color:var(--navy);background:#f6f7ff}
+.mbox textarea{min-height:70px}
+.mbox .lat input,.mbox input.lat{direction:ltr;text-align:left}
+.mbox .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mbox .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.b2{min-height:46px;border-radius:12px;padding:0 18px;border:1px solid #c9d0ee;background:#fff;color:var(--navy);font-weight:600}
+.b2.pri{background:#4559bd;border-color:#4559bd;color:#fff}
+.b2.dng{color:#c42136;border-color:#f1b8c0}
+.small{font-size:13px;color:#5a6488}
+.err{color:#c42136;font-size:14px;margin-top:8px}
+.pin{letter-spacing:.5em;text-align:center;font:600 28px Inter!important}
+/* admin */
+#admin{position:fixed;inset:0;z-index:40;background:#eef0fb;color:var(--navy);overflow:auto}
+.ahead{position:sticky;top:0;z-index:2;background:linear-gradient(90deg,#4559bd,#6f84d9 55%,#9a8bd0);color:#fff;padding:12px max(3vw,14px);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ahead .logos{--lh:34px;justify-content:flex-start}
+.tabs{display:flex;gap:6px;padding:14px max(3vw,14px) 0;flex-wrap:wrap}
+.tabs button{min-height:44px;border-radius:12px 12px 0 0;border:0;background:#dfe3f7;color:var(--navy);padding:0 18px;font-weight:600}
+.tabs button.on{background:#fff}
+.apane{background:#fff;margin:0 max(3vw,14px) 30px;border-radius:0 16px 16px 16px;padding:18px;box-shadow:0 8px 30px #2a3a8014}
+.atool{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.atool input{min-height:44px;border:1px solid #c9d0ee;border-radius:12px;padding:0 12px;font:16px "IBM Plex Sans Arabic";flex:1;min-width:180px}
+.stat{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat div{background:#f3f5ff;border-radius:12px;padding:10px 16px;font-size:14px}
+.stat b{display:block;font:700 24px Inter}
+.trow{display:grid;grid-template-columns:44px 120px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 6px;border-top:1px solid #e6e9f7}
+.trow .n{font:700 18px Inter;text-align:center;color:#4559bd}
+.trow .th{aspect-ratio:16/9;background:#fff center/contain no-repeat;border:1px solid #e1e5f5;border-radius:8px}
+.trow .nm{font-weight:600;font-size:17px}
+.trow .tt{font-size:14px;color:#5a6488;direction:ltr;text-align:right}
+.trow .mt{font-size:13px;color:#7a84a8;margin-top:3px}
+.trow .bt{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.trow .bt button{min-height:40px;min-width:40px;border-radius:10px;border:1px solid #d3d8f0;background:#fff;color:var(--navy);padding:0 10px;font-size:14px}
+.trow .bt button.go{background:#4559bd;color:#fff;border-color:#4559bd}
+.trow.hid{opacity:.45}
+.tag2{display:inline-block;font-size:12px;border-radius:99px;padding:1px 9px;margin-inline-start:6px;background:#e7eaf9;color:#3b4fae;font-weight:600}
+.tag2.done{background:#dff4e8;color:#1f7a4a}.tag2.live{background:#ffe1e5;color:#c42136}.tag2.hid{background:#eee;color:#777}
+.livebox{text-align:center;padding:20px 10px}
+.livebox .big{font:700 clamp(56px,12vw,120px)/1 Inter;margin:10px 0;direction:ltr}
+.livebox .big.warn{color:#d9821a}.livebox .big.last{color:#c42136}
+.livebox .ctl{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.livebox .ctl button{min-height:56px;min-width:120px;font-size:17px}
+.setrow{display:grid;grid-template-columns:220px minmax(0,1fr);gap:12px;align-items:center;padding:12px 0;border-top:1px solid #e6e9f7}
+.setrow select,.setrow input[type=text],.setrow input[type=password]{min-height:44px;border:1px solid #c9d0ee;border-radius:12px;padding:0 12px;font:16px "IBM Plex Sans Arabic";max-width:320px;width:100%}
+.note2{background:#fff6e5;border:1px solid #f3d28c;color:#7a5200;border-radius:12px;padding:10px 14px;font-size:14px;margin-bottom:14px}
+.loadbar{height:6px;background:#ffffff33;border-radius:99px;overflow:hidden;max-width:360px;margin:14px auto 0}
+.loadbar i{display:block;height:100%;width:0;background:#fff;transition:width .2s}
+@media(max-width:700px){.res{grid-template-columns:110px minmax(0,1fr)}.res .go{grid-column:1/-1;text-align:center}.res .who{font-size:18px}
+.trow{grid-template-columns:34px 80px minmax(0,1fr)}.trow .bt{grid-column:1/-1;justify-content:flex-start}.setrow{grid-template-columns:1fr}.mbox .row2{grid-template-columns:1fr}}
+</style>
+
+</head>
+<body>
+<main id="lobby"><div class="orb" style="width:340px;height:340px;top:140px;left:-110px"></div><div class="orb" style="width:200px;height:200px;top:260px;right:6%;opacity:.35"></div><svg class="waves" preserveAspectRatio="none"></svg>
+  <header class="top">
+    <div class="logos" style="--lh:50px;justify-content:flex-start"><img src="logo/moh.png" alt="وزارة الصحة العراقية"><img src="logo/hospital.png" alt="مستشفى خديجة الكبرى التخصصي للمرأة"><img class="isc" src="logo/isc.png" alt="1st ISC 2026"><img src="logo/shrine.png" alt="الأمانة العامة للعتبة الحسينية المقدسة"></div>
+    <div style="display:flex;gap:18px;align-items:center"><div class="uro"><span>تنظيم</span><img src="logo/uroosh_w.png" alt="العروش"></div><div class="clock" id="clock"></div></div>
+  </header>
+  <section class="hero">
+    <h1>المؤتمر العلمي الدولي الأول<br><span style="font-size:.5em;font-weight:400">لمستشفى السيدة خديجة الكبرى (ع) التخصصي للمرأة</span></h1>
+    <p>أهلاً بكم. اكتب اسمك فقط، بدون لقب، حتى يظهر بحثك ويبدأ العرض.</p>
+    <div class="search finder">
+      <input id="q" type="search" placeholder="اكتب اسمك… مثلاً: عقيل مهدي" autocomplete="off" aria-label="اسم الباحث">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+    </div>
+  </section>
+  <section class="results" id="results"></section>
+  <section class="nextup" id="nextup"></section>
+  <div style="height:60px"></div>
+</main>
+
+<section id="ready" class="hide">
+  <div class="rc">
+    <div class="logos"><img src="logo/moh.png" alt="وزارة الصحة العراقية"><img src="logo/hospital.png" alt="مستشفى خديجة الكبرى التخصصي للمرأة"><img class="isc" src="logo/isc.png" alt="1st ISC 2026"><img src="logo/shrine.png" alt="الأمانة العامة للعتبة الحسينية المقدسة"></div>
+    <small id="rNum"></small>
+    <h2 id="rWho"></h2>
+    <p class="ttl lat" id="rTtl"></p>
+    <div class="sp" id="rSp"></div>
+    <div class="row">
+      <button class="btn pri" id="startBtn">ابدأ العرض</button>
+      <button class="btn" id="backBtn">رجوع</button>
+    </div>
+    <div class="loadbar hide" id="rLoad"><i></i></div>
+    <div class="opts" id="rOpts"><span id="rDur"></span></div>
+    <div class="note hide" id="rNote"></div>
+  </div>
+</section>
+
+<section id="stage" class="hide" aria-label="العرض">
+  <div class="sband"><div class="logos"><img src="logo/moh.png" alt="وزارة الصحة العراقية"><img src="logo/hospital.png" alt="مستشفى خديجة الكبرى التخصصي للمرأة"><img class="isc" src="logo/isc.png" alt="1st ISC 2026"><img src="logo/shrine.png" alt="الأمانة العامة للعتبة الحسينية المقدسة"></div><div class="uro"><span>تنظيم</span><img src="logo/uroosh_w.png" alt="العروش"></div></div>
+  <div class="slide" id="slide"></div>
+  <svg id="ring"><path class="track" id="track"/><path class="live" id="live"/><circle r="6" id="head"/></svg>
+  <div class="timechip" id="tchip">15:00</div>
+  <div class="endmsg hide" id="endmsg">انتهى الوقت</div>
+  <div class="toast" id="toast" style="opacity:0"></div>
+  <div class="intro" id="intro"><svg class="waves" preserveAspectRatio="none"></svg>
+    <div><div class="logos"><img src="logo/moh.png" alt="وزارة الصحة العراقية"><img src="logo/hospital.png" alt="مستشفى خديجة الكبرى التخصصي للمرأة"><img class="isc" src="logo/isc.png" alt="1st ISC 2026"><img src="logo/shrine.png" alt="الأمانة العامة للعتبة الحسينية المقدسة"></div><small id="iNum"></small><h2 id="iWho"></h2><p class="lat" id="iTtl"></p><div class="sp" id="iSp"></div><div class="uro"><span>تنظيم</span><img src="logo/uroosh_w.png" alt="العروش"></div><div class="hint">اضغط → أو المسافة للبدء</div></div>
+  </div>
+  <div class="intro thanks hide" id="thanks"><svg class="waves" preserveAspectRatio="none"></svg>
+    <div><div class="logos"><img src="logo/moh.png" alt="وزارة الصحة العراقية"><img src="logo/hospital.png" alt="مستشفى خديجة الكبرى التخصصي للمرأة"><img class="isc" src="logo/isc.png" alt="1st ISC 2026"><img src="logo/shrine.png" alt="الأمانة العامة للعتبة الحسينية المقدسة"></div><small>المؤتمر العلمي الدولي الأول · 1st ISC 2026</small><h2>شكراً لحسن استماعكم</h2><p id="tWho"></p><p class="lat" id="tTtl" style="font-size:clamp(16px,1.8vw,22px);color:var(--mute)"></p><div class="sp">مع خالص التقدير والامتنان</div><div class="uro"><span>تنظيم</span><img src="logo/uroosh_w.png" alt="العروش"></div></div>
+  </div>
+  <div class="strip hide" id="strip"></div>
+  <div class="bar" id="bar">
+    <button id="bExit" title="خروج (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <button id="bGrid" title="كل الشرائح (G)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+    <button id="bPrev" title="السابق"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+    <span class="cnt" id="cnt">1 / 1</span>
+    <button id="bNext" title="التالي"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+    <button dir="rtl" id="bPause" title="إيقاف المؤقت (T)">⏸ المؤقت</button>
+    <button dir="rtl" id="bPlus" title="+1 دقيقة">+1د</button>
+    <button id="bFs" title="ملء الشاشة (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+</section>
+
+<section id="admin" class="hide">
+  <div class="ahead"><div class="logos"><img src="logo/moh.png" alt="وزارة الصحة العراقية"><img src="logo/hospital.png" alt="مستشفى خديجة الكبرى التخصصي للمرأة"><img class="isc" src="logo/isc.png" alt="1st ISC 2026"><img src="logo/shrine.png" alt="الأمانة العامة للعتبة الحسينية المقدسة"></div><div style="display:flex;gap:10px;align-items:center"><b>لوحة الإدارة</b><a class="b2" id="aOut" href="./" target="_blank" style="display:inline-flex;align-items:center;text-decoration:none">صفحة الباحثين ↗</a><button class="b2" id="aLogout">خروج</button></div></div>
+  <div class="tabs" id="tabs"><button data-t="talks" class="on">البحوث</button><button data-t="live">العرض المباشر</button><button data-t="set">الإعدادات</button></div>
+  <div class="apane" id="p-talks">
+    <div class="note2 hide" id="aWarn"></div>
+    <div class="stat" id="aStat"></div>
+    <div class="atool"><input id="aq" type="search" placeholder="بحث بالاسم أو العنوان"><button class="b2 pri" id="aAdd">+ إضافة بحث</button></div>
+    <div id="aList"></div>
+  </div>
+  <div class="apane hide" id="p-live"><div class="livebox" id="liveBox"></div></div>
+  <div class="apane hide" id="p-set">
+    <div class="setrow"><label for="sDur">مدة العرض الافتراضية</label><select id="sDur"></select></div>
+    <div class="setrow"><label for="sShow">العداد الرقمي بالزاوية</label><select id="sShow"><option value="1">ظاهر</option><option value="0">مخفي (الخط بس)</option></select></div>
+    <div class="setrow"><label for="sPin">كلمة سر الإدارة الجديدة</label><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="password" id="sPin" placeholder="اتركها فارغة إذا ما تريد تغيرها"></div></div>
+    <div class="setrow"><span>حالة "تم العرض"</span><div><button class="b2 dng" id="sReset">تصفير حالة كل البحوث</button></div></div>
+    <div class="acts" style="display:flex;justify-content:flex-end;margin-top:16px"><button class="b2 pri" id="sSave">حفظ الإعدادات</button></div>
+    <p class="small" id="sMsg"></p>
+  </div>
+</section>
+
+<div class="modal hide" id="pinM"><div class="mbox"><h3>دخول الإدارة</h3><label for="pinIn">كلمة السر</label><input id="pinIn" type="password" autocomplete="current-password"><div class="err hide" id="pinErr">كلمة السر غلط</div><div class="acts"><button class="b2 pri" id="pinOk">دخول</button></div></div></div>
+
+<div class="modal hide" id="edM"><form class="mbox" id="edF">
+  <h3 id="edH">تعديل بحث</h3>
+  <div class="row2"><div><label for="fAr">الاسم بالعربي</label><input id="fAr" required></div><div><label for="fWho">الاسم بالإنكليزي</label><input id="fWho" class="lat"></div></div>
+  <label for="fAl">طرق كتابة ثانية للاسم (يفصل بينها فارزة)</label><input id="fAl" placeholder="مثلاً: ميثاق, مثيق">
+  <label for="fT">عنوان البحث</label><textarea id="fT" class="lat" dir="auto"></textarea>
+  <label for="fSp">الاختصاص / الجهة</label><input id="fSp" dir="auto">
+  <div class="row2"><div><label for="fDur">مدة العرض</label><select id="fDur"></select></div><div><label for="fFile">ملف العرض (PDF أو صور)</label><input id="fFile" type="file" accept="application/pdf,image/*" multiple></div></div>
+  <p class="small" id="fFileNote"></p>
+  <div class="err hide" id="edErr"></div>
+  <div class="acts"><button type="button" class="b2 dng hide" id="edDel">حذف البحث</button><button type="button" class="b2" id="edX">إلغاء</button><button type="submit" class="b2 pri" id="edOk">حفظ</button></div>
+</form></div>
+<div id="busy" class="hide">جاري التجهيز…</div>
+
+<script src="lib/pdf.min.js"></script>
+<script>
+{
+const M={"2ddfe952":["p-1.jpg"],"39a37d24":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg","p-22.jpg","p-23.jpg","p-24.jpg","p-25.jpg"],"64260f55":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg","p-22.jpg","p-23.jpg","p-24.jpg","p-25.jpg","p-26.jpg","p-27.jpg","p-28.jpg","p-29.jpg","p-30.jpg","p-31.jpg","p-32.jpg","p-33.jpg","p-34.jpg","p-35.jpg","p-36.jpg","p-37.jpg","p-38.jpg","p-39.jpg","p-40.jpg","p-41.jpg"],"71751d47":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg","p-22.jpg","p-23.jpg","p-24.jpg","p-25.jpg","p-26.jpg","p-27.jpg","p-28.jpg","p-29.jpg","p-30.jpg","p-31.jpg","p-32.jpg","p-33.jpg","p-34.jpg","p-35.jpg","p-36.jpg"],"74b39317":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg"],"792cddeb":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg","p-22.jpg","p-23.jpg","p-24.jpg","p-25.jpg","p-26.jpg","p-27.jpg","p-28.jpg","p-29.jpg","p-30.jpg","p-31.jpg","p-32.jpg","p-33.jpg","p-34.jpg","p-35.jpg","p-36.jpg","p-37.jpg","p-38.jpg","p-39.jpg","p-40.jpg","p-41.jpg","p-42.jpg","p-43.jpg","p-44.jpg","p-45.jpg","p-46.jpg","p-47.jpg","p-48.jpg"],"953cf00e":["p-1.jpg","p-2.jpg","p-3.jpg","p-z4.jpg","p-z5.jpg","p-z6.jpg","p-z7.jpg"],"9e0299d0":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg"],"ae1890ba":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg"],"bda199a6":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg","p-22.jpg","p-23.jpg","p-24.jpg","p-25.jpg","p-26.jpg"],"d9a9563a":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg","p-22.jpg","p-23.jpg"],"e80a6ad7":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg"],"f17b7389":["p-00.jpg","p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg"],"f8c197c2":["p-1.jpg","p-2.jpg","p-3.jpg","p-4.jpg","p-5.jpg","p-6.jpg","p-7.jpg"],"fe7e293c":["p-01.jpg","p-02.jpg","p-03.jpg","p-04.jpg","p-05.jpg","p-06.jpg","p-07.jpg","p-08.jpg","p-09.jpg","p-10.jpg","p-11.jpg","p-12.jpg","p-13.jpg","p-14.jpg","p-15.jpg","p-16.jpg","p-17.jpg","p-18.jpg","p-19.jpg","p-20.jpg","p-21.jpg","p-22.jpg","p-23.jpg","p-24.jpg","p-25.jpg","p-26.jpg","p-27.jpg","p-28.jpg","p-29.jpg","p-30.jpg","p-31.jpg","p-32.jpg","p-33.jpg","p-34.jpg","p-35.jpg","p-36.jpg","p-37.jpg","p-38.jpg","p-39.jpg","p-40.jpg","p-41.jpg","p-42.jpg","p-43.jpg","p-44.jpg","p-45.jpg","p-46.jpg","p-47.jpg"]};
+const R=[
+ {id:'f17b7389',who:'Dr. Aqeel Mahdi',ar:'د. عقيل مهدي',t:'From prolonged jaundice to tachypnea: a diagnostic journey of Pompe disease',sp:'Consultant pediatrician / pediatric pulmonologist — Karbala Teaching Hospital for Children'},
+ {id:'fe7e293c',who:'Dr. Masarrah Hashim Alaaraji',ar:'د. مسرة هاشم الأعرجي',t:'Rare Cases of Wheeze',sp:'Pediatric pulmonologist — M.B.Ch.B, F.I.B.M.S, I.F.P.P'},
+ {id:'39a37d24',who:'Dr. Israa Al-Musawi',ar:'د. إسراء الموسوي',t:'Effectiveness of Hemlibra in Hemophilia A patient',sp:'Consultant pediatrician'},
+ {id:'64260f55',who:'Prof. Zuhair M. Almusawi',ar:'أ.د. زهير الموسوي',t:'Common cold in children: Time to change our practice',sp:'Professor of Pediatrics'},
+ {id:'bda199a6',who:'Dr. Ihab Raad Abbas Al Sadik',ar:'د. إيهاب رعد عباس الصادق',t:"The Silent Thief of Shining Red — Wilson's Disease Mimickers in a 9-year-old boy from Babylon",sp:'Consultant Pediatrician — Imam Sadik Teaching Hospital, Babylon'},
+ {id:'74b39317',who:'Dr. Mouna Ibrahim Raheb',ar:'د. منى إبراهيم راهب',t:'Beyond the biopsy: the value of genetic testing in FSGS',sp:'Consultant Nephrologist — Al-Sayyida Khadija Specialized Hospital, Karbala'},
+ {id:'f8c197c2',who:'Dr. Nivin Aziz Ghanimi',ar:'د. نيفين عزيز غانمي',t:'Immunohistochemical Expression of HER2 and PD-L1 and Their Clinicopathological Correlation in Urothelial Carcinoma',sp:'Histopathologist — F.I.B.M.S'},
+ {id:'9e0299d0',who:'Dr. Amenah Dagher Mohammed',ar:'د. آمنة داغر محمد',t:'Surveying of CP & Characteristics in Iraq',sp:'Physical Medicine & Rehabilitation — Karbala University',note:'ملف الكينوت: جداول النتائج طلعت فارغة بالتحويل. صدّره من الماك PDF واستبدله من الزر أعلاه.'},
+ {id:'d9a9563a',who:'Dr. Bouchra Bou Abbass',ar:'د. بشرى بو عباس',t:'Saving Lives, Saving Costs — Patient Safety as a Strategic Investment in Healthcare Governance',sp:'Healthcare Governance & Patient Safety Expert — STC Middle East'},
+ {id:'792cddeb',who:'Dr. Hanan Al Kadhim',ar:'د. حنان الكاظم',t:'STI and PID',sp:'Obstetrics & Gynaecology'},
+ {id:'953cf00e',who:'Dr. Moamel Abdulzahra Jaafar',ar:'د. مؤمل عبد الزهرة جعفر',t:'Epidemiological Trends in Female Breast Cancer Incidence and Mortality in Iraq (2010–2023): A Global Burden of Disease Study',sp:'Medical Doctor — Najaf'},
+ {id:'71751d47',who:'Fatima Khalid Khalil et al.',ar:'فاطمة خالد خليل وزميلاتها',t:'Assessment of Musculoskeletal Pain in Breast Cancer Patients Receiving Hormonal Therapy: A Cross-Sectional Study',sp:'College of Medicine, University of Basra — Supervised by Dr. Loma Al-Mansori & Dr. Noaman Al-Mallah'},
+ {id:'ae1890ba',who:'Dr. Muthik A. Guda',ar:'د. ميثاق كودة',t:'Anticancer Activity of Zinc Oxide Nanoparticles Biosynthesized Using Urtica pilulifera L. Extract Against Breast (IDC) Cancer Cells',sp:'Department of Ecology, Faculty of Sciences, University of Kufa'},
+ {id:'e80a6ad7',who:'Dr. Sahira Nsayef Muslim',ar:'د. ساهرة نصيف مسلم',t:'An Inhibition of Uropathogenic Biofilm Formation in Pregnant Women by Spinach Ferulic Acid',sp:'Department of Biology, College of Science, Mustansiriyah University'},
+ {id:'2ddfe952',who:'Dr. Sura Abd Alwahab',ar:'د. سرى عبد الوهاب',t:'Preterm Infant Vaccination: Myths, Evidence, and Practical Decisions',sp:'Consultant Neonatologist — College of Medicine, University of Baghdad'}
+,
+ {id:'mahdi-test',who:'Mahdi',ar:'مهدي',t:'عرض تجريبي — تجربة النظام قبل المؤتمر',sp:'تجربة',order:99,static:['953cf00e/p-z4.jpg','953cf00e/p-z5.jpg','953cf00e/p-z6.jpg','953cf00e/p-z7.jpg']}
+];
+const BASE=R.map((r,i)=>({...r,order:r.order||i+1,slides:r.static?r.static.map(f=>'s/'+f):(M[r.id]||[]).map(f=>'s/'+r.id+'/'+f)}));
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const DURS=[[1/3,'20 ثانية (تجربة)'],[5,'5 دقائق'],[10,'10 دقائق'],[15,'15 دقيقة'],[20,'20 دقيقة'],[30,'30 دقيقة']];
+const durLabel=m=>(DURS.find(d=>Math.abs(d[0]-m)<1e-6)||[0,m+' دقيقة'])[1];
+const ADMIN=/\/admin\/?/.test(location.pathname);
+let OV={},SET={dur:15,showTime:true},LIVE=null,LASTCMD=null,offset=0,online=null,TOKEN=store.get('isc-token','');
+async function api(a,body,form){const o=form?{method:'POST',body:form}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...(body||{}),token:TOKEN})};
+  const r=await fetch('api.php?a='+a,o);let j={};try{j=await r.json()}catch(e){}
+  if(r.status===401&&ADMIN){TOKEN='';store.set('isc-token','');openPin()}
+  if(!r.ok)throw new Error(j.msg||'صار خطأ بالاتصال');return j}
+
+// ---------- names ----------
+const TITLES=new Set(['د','دكتور','دكتوره','الدكتور','الدكتوره','ا','ام','اد','امد','م','مد','بروف','بروفيسور','البروفيسور','استاذ','الاستاذ','استاذه','الاستاذه','الدكتوراه','dr','doctor','prof','professor','mr','mrs','ms','miss','assist','assoc','et','al','and']);
+const nrm=s=>(s||'').toLowerCase().replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/[ً-ْـ]/g,'').replace(/[.\-_,،'’()]/g,' ');
+const toks=s=>nrm(s).split(/\s+/).filter(w=>w&&!TITLES.has(w)).map(w=>w.replace(/^ال(?=..)/,''));
+function matches(t,q){const qt=toks(q);if(!qt.length)return false;
+  const hay=[t.ar,t.who,...(t.al||[])].flatMap(toks);
+  return qt.every(w=>hay.some(h=>h.startsWith(w)||(w.length>=3&&h.includes(w))));}
+
+// ---------- data ----------
+function talks(){
+  const ids=new Set(BASE.map(b=>b.id));
+  const list=BASE.map(b=>({...b,...(OV[b.id]||{})}));
+  Object.entries(OV).forEach(([id,o])=>{if(!ids.has(id)&&o.custom&&!o.deleted)list.push({id,slides:[],...o})});
+  return list.filter(t=>!t.deleted).sort((a,b)=>(a.order??99)-(b.order??99));
+}
+const visible=()=>talks().filter(t=>!t.hidden);
+const thumb=t=>t.file?(t.file.thumb||t.file.urls?.[0]||''):(t.slides[t.id==='f17b7389'?1:0]||'');
+const nSlides=t=>t.file?(t.file.pages||t.file.urls?.length||0):t.slides.length;
+const tDur=t=>t.dur||SET.dur;
+const saveOV=(id,patch)=>{OV[id]={...(OV[id]||{}),...patch};renderAll();return api('talk',{id,patch}).catch(e=>{toastA(e.message)})};
+function toastA(m){const w=$('aWarn');w.textContent=m;w.classList.remove('hide');setTimeout(()=>w.classList.add('hide'),5000)}
+
+// ---------- lobby ----------
+function card(t,i){return `<button class="res ${t.done?'done':''}" data-id="${esc(t.id)}"><div class="th" style="background-image:url('${thumb(t)}')"></div>
+ <div><div class="who">${esc(t.ar)}${LIVE&&LIVE.talkId===t.id&&LIVE.on?'<span class="tag live">يُعرض الآن</span>':t.done?'<span class="tag done">تم العرض</span>':''}</div><div class="ttl lat">${esc(t.t)}</div></div><span class="go">ابدأ ←</span></button>`}
+function renderLobby(){
+  const q=$('q').value.trim();const list=visible();
+  if(toks(q).join('').length<2){$('results').innerHTML='';
+    const nx=list.find(t=>!t.done);
+    $('nextup').innerHTML=nx?`<h3>المتحدث التالي حسب الجدول</h3>${card(nx)}`:'';return}
+  $('nextup').innerHTML='';
+  const q0=toks(q)[0]||'';const rank=t=>{const f=toks(t.ar)[0]||'',e=toks(t.who)[0]||'';return (f.startsWith(q0)||e.startsWith(q0))?0:1};
+  const m=list.filter(t=>matches(t,q)).sort((a,b)=>rank(a)-rank(b));
+  $('results').innerHTML=m.length?m.slice(0,6).map(card).join(''):`<p class="hintline">ما لكينا بحث بهذا الاسم. جرّب الاسم الأول أو اكتبه بالإنكليزي.</p>`;
+}
+$('q').addEventListener('input',renderLobby);
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const c=document.querySelector('#results .res');if(c)c.click()}});
+document.addEventListener('click',e=>{const c=e.target.closest('.res');if(c&&!$('lobby').classList.contains('hide'))openReady(c.dataset.id)});
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'});if(!$('admin').classList.contains('hide')&&curTab==='live')renderLive()},1000);
+
+// ---------- slides (static or uploaded) ----------
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js';
+const cache={};
+async function pdfToImgs(src,onp){const pdf=await pdfjsLib.getDocument(src).promise;const out=[];
+  for(let p=1;p<=pdf.numPages;p++){const pg=await pdf.getPage(p),v1=pg.getViewport({scale:1}),sc=Math.min(2400/Math.max(v1.width,v1.height),4),v=pg.getViewport({scale:sc});
+    const c=document.createElement('canvas');c.width=v.width;c.height=v.height;await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;
+    out.push(await new Promise(r=>c.toBlob(r,'image/jpeg',.9)));onp&&onp(p/pdf.numPages)}
+  return out}
+async function getSlides(t,onp){
+  if(!t.file)return t.slides;const k=JSON.stringify(t.file);if(cache[k])return cache[k];
+  let s;if(t.file.kind==='pdf'){const bl=await pdfToImgs({url:t.file.url},onp);s=bl.map(b=>URL.createObjectURL(b))}
+  else s=t.file.urls||[];
+  return cache[k]=s}
+
+// ---------- ready ----------
+let cur=null,curSlides=[];
+async function openReady(id){const t=talks().find(x=>x.id===id);if(!t)return;cur=t;curSlides=[];
+  const pos=visible().findIndex(x=>x.id===id)+1;
+  $('rNum').textContent='المتحدث رقم '+pos;$('rWho').textContent=t.ar;$('rTtl').textContent=t.t||'';$('rSp').textContent=[t.who,t.sp].filter(Boolean).join(' — ');
+  $('rDur').textContent='مدة العرض: '+durLabel(tDur(t));
+  $('rNote').textContent=t.note&&!t.file?t.note:'';$('rNote').classList.toggle('hide',!(t.note&&!t.file));
+  $('lobby').classList.add('hide');$('ready').classList.remove('hide');
+  const sb=$('startBtn');sb.disabled=true;sb.textContent='جاري تحميل العرض…';
+  const lb=$('rLoad');lb.classList.toggle('hide',!t.file);lb.firstChild.style.width='0';
+  try{curSlides=await getSlides(t,p=>lb.firstChild.style.width=(p*100)+'%');
+    if(cur!==t)return;
+    if(!curSlides.length)throw 0;
+    curSlides.slice(0,3).forEach(s=>{const im=new Image();im.src=s});
+    sb.disabled=false;sb.textContent='ابدأ العرض';sb.focus();
+  }catch(e){if(cur===t){sb.textContent='ما يوجد ملف عرض لهذا البحث';$('rNote').textContent='الإدارة تكدر ترفع الملف من لوحة الإدارة.';$('rNote').classList.remove('hide')}}
+  lb.classList.add('hide');
+}
+$('backBtn').onclick=()=>{cur=null;$('ready').classList.add('hide');if(ADMIN){openAdmin();return}$('lobby').classList.remove('hide');$('q').focus()};
+
+// ---------- stage ----------
+let thanked=false,idx=-1,total=900,elapsed=0,running=false,last=0,raf=0,L=0,uiT=0,lastCmd=null,ended=false;
+const live=$('live'),track=$('track'),head=$('head');
+function layoutRing(){const w=innerWidth,h=innerHeight,m=3,rr=18;
+  const d=`M${w/2} ${m}H${w-m-rr}Q${w-m} ${m} ${w-m} ${m+rr}V${h-m-rr}Q${w-m} ${h-m} ${w-m-rr} ${h-m}H${m+rr}Q${m} ${h-m} ${m} ${h-m-rr}V${m+rr}Q${m} ${m} ${m+rr} ${m}Z`;
+  $('ring').setAttribute('viewBox',`0 0 ${w} ${h}`);track.setAttribute('d',d);live.setAttribute('d',d);L=live.getTotalLength();live.style.strokeDasharray=L+' '+L;paint()}
+const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+function paint(){const f=Math.min(elapsed/total,1),rem=total-elapsed;
+  live.style.strokeDashoffset=-(f*L);
+  if(L){const p=live.getPointAtLength(Math.min(f*L,L-0.01));head.setAttribute('cx',p.x);head.setAttribute('cy',p.y)}head.style.display=f>=1?'none':'';
+  $('tchip').textContent=rem>=0?fmt(rem):'+'+fmt(-rem);
+  const st=$('stage'),W1=Math.min(180,total*.25),W2=Math.min(60,total*.1);
+  st.classList.toggle('warn',rem<=W1&&rem>W2);st.classList.toggle('last',rem<=W2&&rem>0);st.classList.toggle('over',rem<=0);
+  $('endmsg').classList.toggle('hide',rem>0);if(rem<=0&&!thanked)showThanks();
+}
+function tick(t){if(running)elapsed+=(t-last)/1000;last=t;paint();raf=requestAnimationFrame(tick)}
+function pushLive(extra,done){if(!cur)return;api('live',{done:!!done,live:{talkId:cur.id,name:cur.ar,title:cur.t||'',total,elapsed,running,on:true,slide:idx+1,slides:curSlides.length,ended:thanked,...(extra||{})}}).catch(()=>{})}
+function setRun(v,silent){running=v;$('bPause').textContent=v?'⏸ المؤقت':'▶ المؤقت';if(!v&&!silent)toast('المؤقت متوقف');pushLive()}
+function addMin(){total+=60;toast('+1 دقيقة');if(thanked&&total-elapsed>0){thanked=false;$('thanks').classList.add('hide')}paint();pushLive()}
+function showThanks(){thanked=true;$('tWho').textContent=cur.ar;$('tTtl').textContent=cur.t||'';$('thanks').classList.remove('hide');pushLive()}
+function show(i){if(!$('thanks').classList.contains('hide')){if(i<idx||i===0){$('thanks').classList.add('hide');i=idx}else return}
+  if(i<0)i=0;if(i>curSlides.length-1){if(idx>=0){showThanks();return}i=curSlides.length-1}
+  if(idx===-1){$('intro').style.opacity=0;setTimeout(()=>$('intro').classList.add('hide'),600);if(!running&&elapsed===0)setRun(true,1)}
+  idx=i;const im=new Image();im.src=curSlides[i];im.alt='شريحة '+(i+1);
+  const box=$('slide');while(box.children.length>1)box.firstChild.remove();const old=box.firstChild;box.appendChild(im);
+  const on=()=>{requestAnimationFrame(()=>im.classList.add('on'));if(old){old.classList.remove('on');setTimeout(()=>{if(old.parentNode)old.remove()},300)}};
+  im.complete?on():(im.onload=on,im.onerror=on);
+  [1,2].forEach(k=>{if(curSlides[i+k]){const p=new Image();p.src=curSlides[i+k]}});
+  $('cnt').textContent=(i+1)+' / '+curSlides.length;
+  [...$('strip').children].forEach((c,k)=>c.classList.toggle('cur',k===i));pushLive();
+}
+function start(){const t=cur;total=Math.round(tDur(t)*60);elapsed=0;idx=-1;running=false;thanked=false;
+  $('thanks').classList.add('hide');
+  $('iNum').textContent=$('rNum').textContent;$('iWho').textContent=t.ar;$('iTtl').textContent=t.t||'';$('iSp').textContent=t.who||'';
+  $('intro').classList.remove('hide');$('intro').style.opacity=1;$('slide').innerHTML='';
+  $('tchip').classList.toggle('hide2',!SET.showTime);
+  $('strip').innerHTML=curSlides.map((s,k)=>`<img src="${s}" data-k="${k}" loading="lazy" alt="">`).join('');$('strip').classList.add('hide');
+  $('ready').classList.add('hide');$('stage').classList.remove('hide');$('cnt').textContent='0 / '+curSlides.length;
+  layoutRing();last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);running=false;$('bPause').textContent='▶ المؤقت';
+  OV[t.id]={...(OV[t.id]||{}),done:true};pushLive(null,true);
+}
+function exitStage(){cancelAnimationFrame(raf);running=false;pushLive({on:false,running:false});cur=null;$('stage').classList.add('hide');
+  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});if(ADMIN){openAdmin();return}$('q').value='';$('lobby').classList.remove('hide');renderLobby();$('q').focus()}
+async function fs(){try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch(e){toast('ملء الشاشة غير متاح هنا — افتح الرابط بالمتصفح مباشرة')}}
+$('startBtn').onclick=()=>{fs();start()};
+const next=()=>show(idx+1),prev=()=>show(idx-1);
+$('bNext').onclick=next;$('bPrev').onclick=prev;$('bExit').onclick=exitStage;$('bFs').onclick=fs;
+$('bPause').onclick=()=>setRun(!running);$('bPlus').onclick=addMin;
+$('bGrid').onclick=()=>$('strip').classList.toggle('hide');
+$('strip').onclick=e=>{const k=e.target.dataset.k;if(k!=null){show(+k);$('strip').classList.add('hide')}};
+$('slide').onclick=e=>{e.clientX/innerWidth<.3?prev():next()};
+$('intro').onclick=()=>show(0);
+let tx=0;$('stage').addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+$('stage').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)d>0?next():prev()});
+addEventListener('keydown',e=>{if($('stage').classList.contains('hide'))return;const k=e.key;
+  if(['ArrowRight','ArrowDown','PageDown',' ','Enter','n','N'].includes(k)){e.preventDefault();next()}
+  else if(['ArrowLeft','ArrowUp','PageUp','Backspace','p','P'].includes(k)){e.preventDefault();prev()}
+  else if(k==='Home')show(0);else if(k==='End')show(curSlides.length-1);
+  else if('tTت'.includes(k))setRun(!running);else if('gGل'.includes(k))$('strip').classList.toggle('hide');
+  else if('fFب'.includes(k))fs();else if(k==='Escape'&&!document.fullscreenElement)exitStage()});
+$('stage').addEventListener('mousemove',()=>{$('stage').classList.add('ui');clearTimeout(uiT);uiT=setTimeout(()=>$('stage').classList.remove('ui'),2200)});
+addEventListener('resize',()=>{if(!$('stage').classList.contains('hide'))layoutRing()});
+let toT=0;function toast(m){const t=$('toast');t.textContent=m;t.style.opacity=1;clearTimeout(toT);toT=setTimeout(()=>t.style.opacity=0,1800)}
+function onCmd(c){if(!c||!c.n)return;if(lastCmd===null){lastCmd=c.n;return}if(c.n===lastCmd)return;lastCmd=c.n;
+  if($('stage').classList.contains('hide')||!cur||c.talkId!==cur.id)return;
+  if(c.op==='pause')setRun(false);else if(c.op==='resume')setRun(true,1);else if(c.op==='plus')addMin();
+  else if(c.op==='thanks')showThanks();else if(c.op==='next')next();else if(c.op==='prev')prev();else if(c.op==='stop')exitStage()}
+
+// ---------- admin ----------
+let curTab='talks';
+function openPin(){$('pinM').classList.remove('hide');$('pinErr').classList.add('hide');$('pinIn').value='';setTimeout(()=>$('pinIn').focus(),50)}
+async function tryPin(){const b=$('pinOk');b.disabled=true;try{const j=await api('login',{pass:$('pinIn').value});TOKEN=j.token;store.set('isc-token',TOKEN);$('pinM').classList.add('hide');openAdmin();poll()}
+  catch(e){$('pinErr').textContent=e.message;$('pinErr').classList.remove('hide')}b.disabled=false}
+$('pinOk').onclick=tryPin;$('pinIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryPin()});
+function openAdmin(){$('admin').classList.remove('hide');$('lobby').classList.add('hide');$('ready').classList.add('hide');renderAdmin()}
+$('aLogout').onclick=()=>{TOKEN='';store.set('isc-token','');$('admin').classList.add('hide');openPin()};
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;curTab=b.dataset.t;[...$('tabs').children].forEach(x=>x.classList.toggle('on',x===b));
+  ['talks','live','set'].forEach(t=>$('p-'+t).classList.toggle('hide',t!==curTab));renderAdmin()};
+function warn(){const w=$('aWarn');const m=online===false?'ما كدرنا نتصل بالسيرفر — تأكد من الإنترنت.':'';if(m){w.textContent=m;w.classList.remove('hide')}}
+function renderAdmin(){if($('admin').classList.contains('hide'))return;warn();
+  if(curTab==='talks'){const all=talks(),q=$('aq').value.trim();
+    const vis=all.filter(t=>!t.hidden);
+    $('aStat').innerHTML=`<div><b>${vis.length}</b>بحث بالجدول</div><div><b>${vis.filter(t=>t.done).length}</b>تم عرضه</div><div><b>${vis.filter(t=>!t.done).length}</b>باقي</div><div><b>${Math.round(vis.reduce((a,t)=>a+tDur(t),0))}</b>دقيقة مجموع</div>`;
+    const list=q?all.filter(t=>matches(t,q)||nrm(t.t).includes(nrm(q))):all;
+    $('aList').innerHTML=list.map(t=>{const n=all.indexOf(t)+1;const isLive=LIVE&&LIVE.on&&LIVE.talkId===t.id;
+      return `<div class="trow ${t.hidden?'hid':''}" data-id="${esc(t.id)}"><div class="n">${n}</div><div class="th" style="background-image:url('${thumb(t)}')"></div>
+      <div><div class="nm">${esc(t.ar)}${isLive?'<span class="tag2 live">يُعرض الآن</span>':t.done?'<span class="tag2 done">تم العرض</span>':''}${t.hidden?'<span class="tag2 hid">مخفي</span>':''}</div><div class="tt">${esc(t.t)}</div>
+      <div class="mt">${nSlides(t)} شريحة · ${durLabel(tDur(t))}${t.file?' · ملف مرفوع':''}${t.note&&!t.file?' · ⚠ يحتاج ملف PDF':''}</div></div>
+      <div class="bt"><button data-a="up" title="فوك">↑</button><button data-a="down" title="جوه">↓</button><button data-a="edit">تعديل</button><button data-a="hide">${t.hidden?'إظهار':'إخفاء'}</button>${t.done?'<button data-a="undone">تصفير</button>':''}<button data-a="present" class="go">اعرض</button></div></div>`}).join('')||'<p class="small">ماكو نتائج.</p>';
+  } else if(curTab==='live')renderLive();
+  else{$('sDur').innerHTML=DURS.map(d=>`<option value="${d[0]}" ${Math.abs(d[0]-SET.dur)<1e-6?'selected':''}>${d[1]}</option>`).join('');$('sShow').value=SET.showTime?'1':'0'}
+}
+$('aq').addEventListener('input',renderAdmin);
+$('aList').onclick=e=>{const b=e.target.closest('button');if(!b)return;const id=b.closest('.trow').dataset.id;const all=talks();const i=all.findIndex(t=>t.id===id);const t=all[i];
+  if(b.dataset.a==='up'||b.dataset.a==='down'){const j=b.dataset.a==='up'?i-1:i+1;if(j<0||j>=all.length)return;
+    const a=all[i],c=all[j];const oa=a.order,oc=c.order===oa?oa+(j>i?1:-1):c.order;saveOV(a.id,{order:oc});saveOV(c.id,{order:oa});}
+  else if(b.dataset.a==='edit')openEdit(t);
+  else if(b.dataset.a==='hide')saveOV(id,{hidden:!t.hidden});
+  else if(b.dataset.a==='undone')saveOV(id,{done:false})
+  else if(b.dataset.a==='present'){$('admin').classList.add('hide');openReady(id)}};
+$('aAdd').onclick=()=>openEdit(null);
+let edT=null;
+function openEdit(t){edT=t;$('edH').textContent=t?'تعديل بحث':'إضافة بحث جديد';
+  $('fAr').value=t?.ar||'';$('fWho').value=t?.who||'';$('fAl').value=(t?.al||[]).join(', ');$('fT').value=t?.t||'';$('fSp').value=t?.sp||'';
+  $('fDur').innerHTML=`<option value="">الافتراضي (${durLabel(SET.dur)})</option>`+DURS.map(d=>`<option value="${d[0]}" ${t?.dur&&Math.abs(d[0]-t.dur)<1e-6?'selected':''}>${d[1]}</option>`).join('');
+  $('fFile').value='';$('fFileNote').textContent=t?(t.file?'الملف الحالي: '+(t.file.name||'مرفوع')+' — اختر ملف جديد حتى تبدله.':t.slides?.length?'الملف الحالي: العرض الأصلي ('+t.slides.length+' شريحة). اختر PDF حتى تبدله.':'ماكو ملف بعد.'):'ارفع العرض كـ PDF (من باوربوينت أو كينوت: تصدير PDF).';
+  $('edDel').classList.toggle('hide',!(t&&t.custom));$('edErr').classList.add('hide');$('edM').classList.remove('hide');$('fAr').focus()}
+$('edX').onclick=()=>$('edM').classList.add('hide');
+$('edDel').onclick=()=>{if(!edT)return;saveOV(edT.id,{deleted:true});$('edM').classList.add('hide')};
+$('edF').onsubmit=async e=>{e.preventDefault();const err=$('edErr');err.classList.add('hide');
+  const patch={ar:$('fAr').value.trim(),who:$('fWho').value.trim(),al:$('fAl').value.split(/[,،]/).map(s=>s.trim()).filter(Boolean),t:$('fT').value.trim(),sp:$('fSp').value.trim(),dur:$('fDur').value?+$('fDur').value:null};
+  if(!patch.ar){err.textContent='اكتب الاسم';err.classList.remove('hide');return}
+  const files=[...$('fFile').files];
+  try{$('busy').classList.remove('hide');
+    if(files.length){
+      const up=async(f,nm)=>{const fd=new FormData();fd.append('token',TOKEN);fd.append('file',f,nm||f.name||'file');return api('upload',null,fd)};
+      const pdf=files.find(f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name));
+      if(pdf){if(pdf.size>60*1024*1024)throw new Error('الملف أكبر من 60 ميغا — صدّره بجودة أقل وارفعه');
+        $('busy').textContent='جاري فحص الملف…';const bl=await pdfToImgs({data:await pdf.arrayBuffer()},null,1);
+        $('busy').textContent='جاري رفع الملف…';const u=await up(pdf);
+        const th=await up(await shrink(bl[0]),'thumb.jpg');patch.file={kind:'pdf',url:u.url,pages:bl.pages,name:pdf.name,thumb:th.url};}
+      else{const urls=[];let k=0;const im=files.filter(f=>f.type.startsWith('image/'));for(const f of im){$('busy').textContent='جاري رفع الصور… '+(++k)+'/'+im.length;urls.push((await up(f)).url)}
+        if(!urls.length)throw new Error('الملف لازم يكون PDF أو صور');patch.file={kind:'img',urls,name:urls.length+' صورة',thumb:urls[0],pages:urls.length}}
+    }
+    if(edT){await saveOV(edT.id,patch)}else{const id='c'+Date.now().toString(36);await saveOV(id,{...patch,custom:true,order:talks().length+1})}
+    $('edM').classList.add('hide');
+  }catch(x){err.textContent=x.message||'صار خطأ بالحفظ';err.classList.remove('hide')}
+  $('busy').classList.add('hide');$('busy').textContent='جاري التجهيز…'};
+async function shrink(blob){const im=await createImageBitmap(blob);const c=document.createElement('canvas');const s=480/im.width;c.width=480;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);return new Promise(r=>c.toBlob(r,'image/jpeg',.8))}
+function liveRem(){if(!LIVE||!LIVE.on)return null;const el=LIVE.elapsed+(LIVE.running?(Date.now()+offset-LIVE.at)/1000:0);return LIVE.total-el}
+let liveKey='';
+function renderLive(){const b=$('liveBox');const rem=liveRem();
+  if(rem===null||Date.now()+offset-LIVE.at>6*3600e3){if(liveKey!=='none'){liveKey='none';b.innerHTML='<p style="font-size:18px">ماكو عرض شغال هسه.</p><p class="small">من يبدي أي باحث يعرض، يطلع هنا الوقت وتكدر تتحكم بيه من تلفونك.</p>'}return}
+  const key=[LIVE.talkId,LIVE.running,LIVE.ended,LIVE.slide,LIVE.slides].join('|');
+  if(key!==liveKey){liveKey=key;
+    b.innerHTML=`<div class="small">يُعرض الآن</div><div style="font:600 26px 'IBM Plex Sans Arabic'">${esc(LIVE.name)}</div><div class="small lat">${esc(LIVE.title)}</div>
+    <div class="big" id="lvT"></div><div class="small">${LIVE.running?'المؤقت يمشي':'المؤقت متوقف'} · شريحة ${LIVE.slide||0} من ${LIVE.slides||0}${LIVE.ended?' · ظاهرة شاشة الشكر':''}</div>
+    <div class="ctl"><button class="b2" data-c="prev">→ السابق</button><button class="b2" data-c="next">التالي ←</button>
+    <button class="b2 pri" data-c="${LIVE.running?'pause':'resume'}">${LIVE.running?'⏸ إيقاف المؤقت':'▶ تشغيل المؤقت'}</button><button class="b2" data-c="plus">+1 دقيقة</button><button class="b2" data-c="thanks">إنهاء (شاشة الشكر)</button><button class="b2 dng" data-c="stop">إغلاق العرض</button></div>`}
+  const W1=Math.min(180,LIVE.total*.25),W2=Math.min(60,LIVE.total*.1),t=$('lvT');
+  t.textContent=rem>=0?fmt(rem):'+'+fmt(-rem);t.className='big '+(rem<=W2?'last':rem<=W1?'warn':'');}
+$('liveBox').onclick=e=>{const b=e.target.closest('button[data-c]');if(!b||!LIVE)return;api('cmd',{op:b.dataset.c,talkId:LIVE.talkId}).catch(e=>toastA(e.message));b.disabled=true;setTimeout(()=>b.disabled=false,800)};
+$('sSave').onclick=async()=>{const np=$('sPin').value.trim();if(np&&np.length<6){$('sMsg').textContent='كلمة السر لازم 6 حروف أو أكثر';return}
+  try{const j=await api('settings',{dur:+$('sDur').value,showTime:$('sShow').value==='1',newPass:np});SET={...SET,...j.settings};$('sPin').value='';$('sMsg').textContent=np?'انحفظت ✓ وتغيرت كلمة السر':'انحفظت ✓'}catch(e){$('sMsg').textContent=e.message}renderAll()};
+$('sReset').onclick=async()=>{const b=$('sReset');if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent='متأكد؟ اضغط مرة ثانية';setTimeout(()=>{b.dataset.c='';b.textContent='تصفير حالة كل البحوث'},3000);return}
+  b.dataset.c='';b.textContent='تصفير حالة كل البحوث';try{await api('reset');Object.values(OV).forEach(o=>o.done=false);renderAll();$('sMsg').textContent='تصفّرت ✓'}catch(e){$('sMsg').textContent=e.message}};
+
+function renderAll(){renderLobby();renderAdmin()}
+function waves(){document.querySelectorAll('.waves').forEach(sv=>{const W=1600,H=400;let p='';for(let k=0;k<26;k++){let d='';for(let x=0;x<=W;x+=20){const y=H*0.25+k*11+Math.sin(x/170+k*.35)*28+Math.sin(x/420-k*.2)*18;d+=(x?'L':'M')+x+' '+y.toFixed(1)}p+=`<path d="${d}" fill="none" stroke="#fff" stroke-opacity="${(.15+k*.012).toFixed(3)}" stroke-width="1.2"/>`}sv.setAttribute('viewBox',`0 0 ${W} ${H}`);sv.innerHTML=p})}
+waves();renderAll();
+let pt=0,lastSig='';async function poll(){clearTimeout(pt);try{const r=await fetch('api.php?a=state&token='+encodeURIComponent(TOKEN)+'&_='+Date.now(),{cache:'no-store'});const j=await r.json();
+  online=true;offset=j.now-Date.now();OV=Array.isArray(j.talks)?{}:(j.talks||{});SET={...SET,...(j.settings||{})};LIVE=j.live||null;
+  if(ADMIN&&!j.admin&&$('pinM').classList.contains('hide')&&$('stage').classList.contains('hide')){TOKEN='';openPin()}
+  onCmd(j.cmd||{n:0});const sig=JSON.stringify([j.talks,j.settings,LIVE&&LIVE.on,LIVE&&LIVE.talkId]);if(sig!==lastSig&&$('stage').classList.contains('hide')){lastSig=sig;renderLobby();if(curTab==='talks')renderAdmin()}}catch(e){online=false;warn()}
+  pt=setTimeout(poll,$('stage').classList.contains('hide')?(ADMIN?2000:5000):1500)}
+if(ADMIN){$('lobby').classList.add('hide');if(TOKEN)openAdmin();else openPin()}
+poll();
+}
+</script>
+</body>
+</html>

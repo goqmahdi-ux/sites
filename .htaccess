@@ -1,0 +1,13 @@
+Options -Indexes
+DirectoryIndex index.html
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|php)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+<IfModule LiteSpeed>
+  CacheLookup off
+</IfModule>
+<FilesMatch "\.(py|md|json|log)$">
+  Require all denied
+</FilesMatch>
