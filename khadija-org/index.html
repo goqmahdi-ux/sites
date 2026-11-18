@@ -32,6 +32,7 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #c9a4
 .spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;display:none}
 .busy .spin{display:inline-block}@keyframes s{to{transform:rotate(360deg)}}
 .check{width:64px;height:64px;border-radius:50%;background:var(--free);color:#fff;display:grid;place-items:center;margin:0 auto 10px;font-size:34px}
+.steps{margin:10px 0 0;padding-inline-start:20px;text-align:start;line-height:1.9}.steps li{margin:4px 0}.msg .steps b{display:inline;font-size:inherit;margin:0}
 </style>
 </head>
 <body>
@@ -78,7 +79,7 @@ $('#f').addEventListener('submit',e=>{
     busy(false);
   },err=>{
     busy(false);
-    show('bad',err.code===1?'لم يُسمح بالوصول إلى موقعك. فعّل خدمة الموقع من إعدادات الهاتف، واسمح للمتصفح بالوصول إليه، ثم أعد المحاولة.':'تعذّر تحديد موقعك. تأكد من تفعيل خدمة الموقع وأعد المحاولة.');
+    const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);const st=ios?'<ol class="steps"><li>افتح <b>الإعدادات</b> ← <b>الخصوصية والأمان</b> ← <b>خدمات الموقع</b> وتأكد أنها مفعّلة.</li><li>انزل إلى <b>مواقع Safari</b> (أو اسم المتصفح الذي تستخدمه) واختر <b>أثناء استخدام التطبيق</b>، وفعّل <b>الموقع الدقيق</b>.</li><li>ارجع إلى هذه الصفحة، حدّثها، واضغط تسجيل الحضور مرة أخرى.</li></ol>':'<ol class="steps"><li>فعّل <b>الموقع</b> من الشريط العلوي للهاتف.</li><li>اضغط على رمز القفل بجانب الرابط ← <b>الأذونات</b> ← <b>الموقع</b> ← <b>السماح</b>.</li><li>حدّث الصفحة واضغط تسجيل الحضور مرة أخرى.</li></ol>';show('bad',err.code===1?'<b>الموقع غير مسموح لهذا المتصفح.</b>'+st:'<b>تعذّر تحديد موقعك.</b> تأكد من تفعيل خدمة الموقع، واخرج إلى مكان مفتوح إن أمكن، ثم أعد المحاولة.');
   },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
 });
 })();
