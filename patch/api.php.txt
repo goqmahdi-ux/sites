@@ -38,7 +38,7 @@ function f_ver(): string { return data_dir() . '/ver'; }
 
 function fresh(): array {
     return ['version' => 1, 'seats' => [], 'guests' => [], 'jobs' => [], 'jobSeq' => 0, 'users' => [], 'sessions' => [],
-        'fails' => [], 'orgs' => [], 'ofails' => [], 'oform' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
+        'fails' => [], 'orgs' => [], 'ofails' => [], 'oform' => [], 'votes' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
             'subtitle' => 'مستشفى السيدة خديجة الكبرى (ع) التخصصي للمرأة', 'printMode' => 'auto', 'printer' => '',
             'gap' => 3, 'density' => 10, 'flip' => false, 'offsetX' => 0]];
 }
@@ -51,7 +51,7 @@ function load(): array {
     $set = array_merge($b['settings'], (array)($s['settings'] ?? []));
     $s = array_merge($b, $s);
     $s['settings'] = $set;
-    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
+    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform', 'votes'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
     if (!is_array($s['settings']['zone'] ?? null)) $s['settings']['zone'] = $b['settings']['zone'];
     // كراسي ما موجودة بترتيب القاعة الحالي تنشال، وضيوفها يرجعون للقائمة
     foreach (array_keys($s['seats']) as $sid) if (!seat_rc((string)$sid)) {
@@ -220,6 +220,21 @@ function org_clean(array $b, array $o): array {
     }
     return $o;
 }
+// مقارنة التصويت مع بيانات المنظم (تنحسب كل مرة تنفتح القائمة)
+function vote_cmp(array $S, array $x): array {
+    $v = null; $vp = '';
+    foreach ([$x['ph'] ?? '', $x['vph'] ?? ''] as $p) if ($p !== '' && isset($S['votes'][$p])) { if (!$v || $S['votes'][$p]['t'] > $v['t']) { $v = $S['votes'][$p]; $vp = $p; } }
+    if (!$v) return ['vote' => null];
+    return ['vote' => ['n' => $v['n'], 'shift' => $v['shift'], 't' => $v['t'], 'c' => $v['c'] ?? 1, 'ph' => $vp,
+        'how' => $vp === ($x['ph'] ?? '') ? 'phone' : 'name', 'nameOk' => same_name($v['n'], $x['n'] ?? '')]];
+}
+function votes_loose(array $S): array {
+    $own = [];
+    foreach ($S['orgs'] as $o) { if (($o['ph'] ?? '') !== '') $own[$o['ph']] = 1; if (($o['vph'] ?? '') !== '') $own[$o['vph']] = 1; }
+    $out = [];
+    foreach ($S['votes'] as $p => $v) if (!isset($own[$p])) $out[] = ['ph' => (string)$p] + $v;
+    return $out;
+}
 function orgs_out(array $S): array {
     $out = [];
     foreach ($S['orgs'] as $id => $x) {
@@ -227,14 +242,14 @@ function orgs_out(array $S): array {
         $u = ($uid && isset($S['users'][$uid])) ? $S['users'][$uid] : null;
         $out[] = array_merge(['id' => $id], $x, ['uid' => $u ? $uid : null, 'pin' => $u ? ($x['pin'] ?? null) : null,
             'role' => $u['role'] ?? null, 'perms' => $u ? ($u['role'] === 'admin' ? PERMS : clean_perms($u['perms'] ?? DEFAULT_PERMS)) : [],
-            'task' => $u['task'] ?? '', 'sup' => $u['sup'] ?? null, 'seen' => $u['seen'] ?? 0, 'att' => obj((array)($x['att'] ?? []))]);
+            'task' => $u['task'] ?? '', 'sup' => $u['sup'] ?? null, 'seen' => $u['seen'] ?? 0, 'att' => obj((array)($x['att'] ?? []))], vote_cmp($S, $x));
     }
     return $out;
 }
 function org_res(array $S): array {
     $ad = [];
     foreach ($S['users'] as $uid => $u) if ($u['role'] === 'admin') $ad[] = ['id' => $uid, 'name' => $u['name']];
-    return ['orgs' => orgs_out($S), 'zone' => $S['settings']['zone'], 'today' => date('Y-m-d'), 'admins' => $ad];
+    return ['orgs' => orgs_out($S), 'zone' => $S['settings']['zone'], 'today' => date('Y-m-d'), 'admins' => $ad, 'loose' => votes_loose($S), 'nvotes' => count($S['votes'])];
 }
 function remove_user(array &$S, string $uid): void {
     unset($S['users'][$uid]);
@@ -337,13 +352,61 @@ function org_rate(array &$S): void {
     $f[0]++; $S['oform'][$ip] = $f;
     foreach ($S['oform'] as $k => $x) if ($now - ($x[1] ?? 0) > 7200) unset($S['oform'][$k]);
 }
+function nname(string $x): string {
+    $x = preg_replace(['/[إأآ]/u', '/ة/u', '/ى/u', '/ؤ/u', '/ئ/u', '/[\x{064B}-\x{0652}\x{0640}]/u', '/[^\p{Arabic}\p{L}\s]/u', '/\s+/u'], ['ا', 'ه', 'ي', 'و', 'ي', '', ' ', ' '], trim($x));
+    $x = preg_replace('/(^|\s)عبد\s+/u', '$1عبد', (string)$x);
+    return trim((string)$x);
+}
+// نفس الشخص إذا أول اسمين متطابقين والاسم الأقصر جزء من الأطول
+function same_name(string $a, string $b): bool {
+    $x = explode(' ', nname($a)); $y = explode(' ', nname($b));
+    if (count($x) < 2 || count($y) < 2) return false;
+    $n = min(count($x), count($y));
+    if ($n < 3 && count($x) !== count($y)) return false; // الاسم الثنائي لازم يطابق بالكامل
+    return array_slice($x, 0, $n) === array_slice($y, 0, $n);
+}
+function org_by_name(array $S, string $name, string $skipPh = ''): ?string {
+    $hit = [];
+    foreach ($S['orgs'] as $k => $o) if (same_name($o['n'] ?? '', $name)) $hit[] = (string)$k;
+    return count($hit) === 1 ? $hit[0] : null;
+}
+function guess_g(string $name): string {
+    $f = explode(' ', nname($name))[0] ?? '';
+    $m = ['محمد','علي','حسين','حسن','احمد','مهدي','جعفر','عباس','مصطفي','مرتضي','منتظر','حيدر','كرار','زيد','يوسف','هاشم','سجاد','امير','باقر','صادق','كاظم','رضا','مسلم','عمار','ياسر','قاسم','جاسم','سلمان','عقيل','حمزه','ابراهيم','اسماعيل','موسي','عيسي','عمر','خالد','سيف','ميثم','مؤمل','مومل','حسنين','اكبر','ليث','ضياء','نور الدين','فاضل','سالم','جواد','رسول','عبدالله','عبدالرحمن','عبدالمهدي','عبدالحسين','عبدالرضا','عبدالامير','عبدالكريم','عبدالزهره'];
+    return in_array($f, $m, true) ? 'm' : 'f';
+}
 function org_find(array $S, string $ph, string $name = ''): ?string {
     if ($ph !== '') foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === $ph) return (string)$k;
     $nn = fn($x) => preg_replace(['/[إأآ]/u', '/ة/u', '/ى/u', '/\s+/u'], ['ا', 'ه', 'ي', ' '], trim((string)$x));
     if ($name !== '') foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === '' && $nn($o['n'] ?? '') === $nn($name)) return (string)$k;
     return null;
 }
-if ($r === 'org-form' || $r === 'org-vote') {
+if ($r === 'org-vote') {
+    org_rate($S);
+    $ph = norm_ph((string)($b['ph'] ?? ''));
+    $name = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['n'] ?? ''))), 0, 80);
+    $shift = in_array($b['shift'] ?? '', ['a', 'b'], true) ? $b['shift'] : '';
+    if (!preg_match('/^07\d{9}$/', $ph)) { save($S, false); out(400, ['error' => 'ph', 'msg' => 'اكتب رقم هاتفك كاملاً، مثل 07701234567']); }
+    if (count(explode(' ', $name)) < 2) { save($S, false); out(400, ['error' => 'n', 'msg' => 'اكتب اسمك الثلاثي']); }
+    if ($shift === '') { save($S, false); out(400, ['error' => 'shift', 'msg' => 'اختر وقت الحضور']); }
+    $old = $S['votes'][$ph] ?? null;
+    $S['votes'][$ph] = ['n' => $name, 'shift' => $shift, 't' => now_ms(), 'c' => (int)($old['c'] ?? 0) + 1];
+    // المقارنة: بالرقم أول، وإذا ماكو بالاسم، وإذا ماكو نضيفه منظم جديد
+    $oid = null; $how = 'phone';
+    foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === $ph || ($o['vph'] ?? '') === $ph) { $oid = (string)$k; break; }
+    if ($oid === null && ($oid = org_by_name($S, $name)) !== null) {
+        $how = 'name';
+        if (($S['orgs'][$oid]['ph'] ?? '') === '') $S['orgs'][$oid]['ph'] = $ph; else $S['orgs'][$oid]['vph'] = $ph;
+    }
+    if ($oid === null) {
+        $how = 'new'; $oid = 'o' . rid(4);
+        $S['orgs'][$oid] = org_clean(['n' => $name, 'ph' => $ph, 'g' => guess_g($name)], ['att' => [], 'uid' => null, 'pin' => null, 'ct' => time(), 'src' => 'vote']);
+    }
+    $S['orgs'][$oid]['shift'] = $shift; $S['orgs'][$oid]['sv'] = now_ms();
+    save($S);
+    out(200, ['ok' => true, 'status' => $how, 'name' => explode(' ', $name)[0], 'shift' => $shift, 'again' => $old !== null]);
+}
+if ($r === 'org-form') {
     org_rate($S);
     $ph = norm_ph((string)($b['ph'] ?? ''));
     if (!preg_match('/^07\d{9}$/', $ph)) { save($S, false); out(400, ['error' => 'ph', 'msg' => 'اكتب رقم هاتفك كاملاً، مثل 07701234567']); }
