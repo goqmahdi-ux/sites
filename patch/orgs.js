@@ -131,23 +131,35 @@ function access(o){let pre=o.uid?(o.role==='admin'?'admin':(Object.entries(PRE).
  const cp=mc.querySelector('#aCopy');cp&&(cp.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(share(o.pin)).then(()=>toast('انتسخ'),()=>{})});
 }
 /* منطقة الحضور */
-function zone(){const z=D.zone||{};let on=!!z.on,lat=z.lat,lng=z.lng;
+const SIBT=[[32.6137844,44.0077833],[32.6125035,44.0087411],[32.6121767,44.0087052],[32.6117606,44.0090085],[32.6114349,44.0083865],[32.6105507,44.0066625],[32.6123529,44.0054181],[32.6124399,44.0055777],[32.6126192,44.0054441],[32.6137237,44.0075199],[32.6138219,44.0077122]];
+function polySvg(P){const la0=P.reduce((a,p)=>a+p[0],0)/P.length,k=Math.cos(la0*Math.PI/180),xs=P.map(p=>p[1]*k),ys=P.map(p=>-p[0]),x0=Math.min(...xs),y0=Math.min(...ys),w=Math.max(...xs)-x0,h=Math.max(...ys)-y0,s=Math.max(w,h)||1,pad=.08;
+ const pts=P.map((p,i)=>((xs[i]-x0+(s-w)/2)/s*(1-2*pad)+pad)*100+','+((ys[i]-y0+(s-h)/2)/s*(1-2*pad)+pad)*100).join(' ');
+ return `<svg viewBox="0 0 100 100" width="96" height="96" style="flex:none;background:#f6f1f3;border-radius:14px"><polygon points="${pts}" fill="rgba(94,19,52,.16)" stroke="#5e1334" stroke-width="1.6" stroke-linejoin="round"/></svg>`}
+function zone(){const z=D.zone||{};let on=!!z.on,lat=z.lat,lng=z.lng,mode=(z.poly&&z.poly.length>2)?'poly':(lat!=null?'circle':'poly');
+ const P=(z.poly&&z.poly.length>2)?z.poly:SIBT,cLa=+(P.reduce((a,p)=>a+p[0],0)/P.length).toFixed(6),cLo=+(P.reduce((a,p)=>a+p[1],0)/P.length).toFixed(6);
  const info=()=>lat!=null?`<div class="note">الموقع المحدد: <span dir="ltr">${lat}, ${lng}</span> · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${lat},${lng}">شوفه على الخريطة</a></div>`:'<div class="note">ما محدد موقع بعد.</div>';
- openM(`<h3>منطقة حضور المنظمين</h3><p class="note">المنظم يگدر يسجّل حضوره بس إذا جان داخل هذي المنطقة. أسهل طريقة: من تكون داخل الجامعة دوس «استخدم موقعي الحالي».</p>
+ openM(`<h3>منطقة حضور المنظمين</h3>
+ <div class="seg2" id="zMode" style="margin:6px 0 12px"><button type="button" data-v="poly">حدود الجامعة بالضبط</button><button type="button" data-v="circle">دائرة حول نقطة</button></div>
+ <div id="zPoly"><div style="display:flex;gap:12px;align-items:center">${polySvg(P)}<div><b style="display:block;margin-bottom:4px">جامعة السبطين للعلوم الطبية</b><div class="note" style="margin:0">المنظم يگدر يسجّل بس إذا جان داخل سور الجامعة. اللي برّه السور، حتى لو بالشارع المقابل، ما يگدر يسجّل.<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${cLa},${cLo}">شوف الجامعة على الخريطة</a></div></div></div></div>
+ <div id="zCirc"><p class="note">المنظم يگدر يسجّل حضوره بس إذا جان داخل هذي الدائرة. من تكون داخل الجامعة دوس «استخدم موقعي الحالي».</p>
  <div id="zInfo">${info()}</div><div class="row"><button class="btn primary" id="zMe">استخدم موقعي الحالي</button></div>
  <label style="margin-top:12px">أو الصق إحداثيات أو رابط خرائط Google<input class="inp" id="zTxt" dir="ltr" placeholder="32.6160, 44.0249"></label>
- <div class="g2"><label>نصف القطر<select id="zR">${[100,150,200,300,500,800,1000,1500].map(r=>`<option value="${r}"${r===(z.r||300)?' selected':''}>${r<1000?r+' متر':(r/1000)+' كم'}</option>`).join('')}</select></label>
- <label>الحالة<div class="seg2" id="zOn"><button type="button" data-v="1">مفعّلة</button><button type="button" data-v="0">موقوفة</button></div></label></div>
+ <label>نصف القطر<select id="zR">${[100,150,200,300,500,800,1000,1500].map(r=>`<option value="${r}"${r===(z.r||300)?' selected':''}>${r<1000?r+' متر':(r/1000)+' كم'}</option>`).join('')}</select></label></div>
+ <label style="margin-top:12px">الحالة<div class="seg2" id="zOn"><button type="button" data-v="1">مفعّلة</button><button type="button" data-v="0">موقوفة</button></div></label>
  <div class="err" id="zErr"></div><div class="row"><button class="btn primary" id="zSave">حفظ</button><button class="btn secondary" id="zCancel">إغلاق</button></div>`);
- const so=()=>mc.querySelectorAll('#zOn button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===on));so();
+ const so=()=>mc.querySelectorAll('#zOn button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===on));
+ const sm=()=>{mc.querySelectorAll('#zMode button').forEach(b=>b.classList.toggle('on',b.dataset.v===mode));mc.querySelector('#zPoly').style.display=mode==='poly'?'':'none';mc.querySelector('#zCirc').style.display=mode==='circle'?'':'none';mc.querySelector('#zErr').textContent=''};so();sm();
+ mc.querySelector('#zMode').onclick=e=>{const b=e.target.closest('button');if(b){mode=b.dataset.v;sm()}};
  mc.querySelector('#zOn').onclick=e=>{const b=e.target.closest('button');if(b){on=b.dataset.v==='1';so()}};mc.querySelector('#zCancel').onclick=closeM;
  mc.querySelector('#zMe').onclick=()=>{const er=mc.querySelector('#zErr');if(!navigator.geolocation){er.textContent='هذا الجهاز ما يدعم تحديد الموقع';return}er.textContent='نحدد موقعك…';
   navigator.geolocation.getCurrentPosition(p=>{lat=+p.coords.latitude.toFixed(6);lng=+p.coords.longitude.toFixed(6);on=!0;so();mc.querySelector('#zInfo').innerHTML=info();er.textContent='دقة الموقع تقريباً '+Math.round(p.coords.accuracy)+' متر، دوس حفظ.'},
   x=>{er.textContent=x.code===1?'لازم تسمح للمتصفح يوصل لموقعك':'ما گدرنا نحدد موقعك، حاول مرة ثانية'},{enableHighAccuracy:!0,timeout:20000,maximumAge:0})};
  mc.querySelector('#zTxt').oninput=e=>{const t=e.target.value,m=t.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/)||t.match(/[?&](?:q|query|ll)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/)||t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||t.match(/(-?\d{1,2}\.\d{3,})\s*[,،\s]\s*(-?\d{1,3}\.\d{3,})/);
   if(m){lat=+(+m[1]).toFixed(6);lng=+(+m[2]).toFixed(6);mc.querySelector('#zInfo').innerHTML=info();mc.querySelector('#zErr').textContent=''}};
- mc.querySelector('#zSave').onclick=async()=>{const b={r:+mc.querySelector('#zR').value,on};if(lat!=null){b.lat=lat;b.lng=lng}try{apply(await api('zone/set',b));closeM();toast('انحفظت منطقة الحضور')}catch(e){mc.querySelector('#zErr').textContent=e.message}};
+ mc.querySelector('#zSave').onclick=async()=>{let b;if(mode==='poly')b={poly:P,lat:cLa,lng:cLo,on};else{if(lat==null&&on){mc.querySelector('#zErr').textContent='حدّد الموقع أول';return}b={poly:null,r:+mc.querySelector('#zR').value,on};if(lat!=null){b.lat=lat;b.lng=lng}}
+  try{apply(await api('zone/set',b));closeM();toast('انحفظت منطقة الحضور')}catch(e){mc.querySelector('#zErr').textContent=e.message}};
 }
+
 function link(){const msg=`رابط تسجيل دخول المنظمين لمؤتمر السيدة خديجة الكبرى (ع)\nافتحه من داخل الجامعة واكتب رقم هاتفك:\n${ORG_URL}`;
  openM(`<h3>رابط تسجيل دخول المنظمين</h3><p class="note">المنظم يفتح الرابط من تلفونه داخل الجامعة، يكتب رقمه، وحضوره يتسجّل ويطلع هنا مباشرة.${D.zone&&D.zone.on?'':' <b style="color:#b3261e">منطقة الحضور بعدها مو مفعّلة.</b>'}</p>
  <div class="bigPin" style="font-size:16px;letter-spacing:0;word-break:break-all">${esc(ORG_URL)}</div>

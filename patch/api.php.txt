@@ -38,7 +38,7 @@ function f_ver(): string { return data_dir() . '/ver'; }
 
 function fresh(): array {
     return ['version' => 1, 'seats' => [], 'guests' => [], 'jobs' => [], 'jobSeq' => 0, 'users' => [], 'sessions' => [],
-        'fails' => [], 'orgs' => [], 'ofails' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
+        'fails' => [], 'orgs' => [], 'ofails' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
             'subtitle' => 'مستشفى السيدة خديجة الكبرى (ع) التخصصي للمرأة', 'printMode' => 'auto', 'printer' => '',
             'gap' => 3, 'density' => 10, 'flip' => false, 'offsetX' => 0]];
 }
@@ -170,6 +170,26 @@ function dist_m(float $a, float $b, float $c, float $d): float {
     $h = sin(deg2rad($c - $a) / 2) ** 2 + cos(deg2rad($a)) * cos(deg2rad($c)) * sin(deg2rad($d - $b) / 2) ** 2;
     return 2 * 6371000 * asin(min(1.0, sqrt($h)));
 }
+function in_poly(array $P, float $la, float $lo): bool {
+    $in = false; $n = count($P);
+    for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
+        $ya = (float)$P[$i][0]; $xa = (float)$P[$i][1]; $yb = (float)$P[$j][0]; $xb = (float)$P[$j][1];
+        if ((($ya > $la) !== ($yb > $la)) && ($lo < ($xb - $xa) * ($la - $ya) / ($yb - $ya) + $xa)) $in = !$in;
+    }
+    return $in;
+}
+function poly_edge_m(array $P, float $la, float $lo): float {
+    $kx = 111320 * cos(deg2rad($la)); $ky = 110574; $best = INF; $n = count($P);
+    for ($i = 0, $j = $n - 1; $i < $n; $j = $i++) {
+        $ax = ((float)$P[$j][1] - $lo) * $kx; $ay = ((float)$P[$j][0] - $la) * $ky;
+        $bx = ((float)$P[$i][1] - $lo) * $kx; $by = ((float)$P[$i][0] - $la) * $ky;
+        $dx = $bx - $ax; $dy = $by - $ay; $l = $dx * $dx + $dy * $dy;
+        $t = $l > 0 ? max(0.0, min(1.0, -($ax * $dx + $ay * $dy) / $l)) : 0.0;
+        $best = min($best, hypot($ax + $t * $dx, $ay + $t * $dy));
+    }
+    return $best;
+}
+function zone_poly(array $z): ?array { return (isset($z['poly']) && is_array($z['poly']) && count($z['poly']) >= 3) ? $z['poly'] : null; }
 function new_pin(array $S): string { do { $p = (string)random_int(100000, 999999); } while (user_by_pin($S, $p)); return $p; }
 function org_clean(array $b, array $o): array {
     foreach ([['n', 80], ['area', 80], ['uni', 120], ['field', 220], ['exp', 220], ['avail', 60], ['soc', 160], ['note', 220]] as [$k, $n])
@@ -295,8 +315,8 @@ if ($r === 'org-checkin') {
     $ip = client_ip();
     $f = $S['ofails'][$ip] ?? [0, 0];
     if ($f[1] > time()) out(429, ['error' => 'wait', 'msg' => 'محاولات كثيرة، انتظر ' . ($f[1] - time() + 1) . ' ثانية ثم أعد المحاولة']);
-    $z = $S['settings']['zone'];
-    if (empty($z['on']) || !is_numeric($z['lat'] ?? null) || !is_numeric($z['lng'] ?? null)) out(409, ['error' => 'zone', 'msg' => 'لم يُحدَّد موقع الجامعة بعد، يُرجى مراجعة المسؤول']);
+    $z = $S['settings']['zone']; $poly = zone_poly($z);
+    if (empty($z['on']) || (!$poly && (!is_numeric($z['lat'] ?? null) || !is_numeric($z['lng'] ?? null)))) out(409, ['error' => 'zone', 'msg' => 'لم يُحدَّد موقع الجامعة بعد، يُرجى مراجعة المسؤول']);
     $p = norm_ph((string)($b['ph'] ?? ''));
     $oid = null;
     if (strlen($p) >= 10) foreach ($S['orgs'] as $k => $o) if (($o['ph'] ?? '') === $p) { $oid = (string)$k; break; }
@@ -309,9 +329,17 @@ if ($r === 'org-checkin') {
     unset($S['ofails'][$ip]);
     $lat = $b['lat'] ?? null; $lng = $b['lng'] ?? null; $acc = is_numeric($b['acc'] ?? null) ? (float)$b['acc'] : 0.0;
     if (!is_numeric($lat) || !is_numeric($lng)) out(400, ['error' => 'loc', 'msg' => 'تعذّر الحصول على موقعك، فعّل خدمة الموقع ثم أعد المحاولة']);
-    $d = dist_m((float)$z['lat'], (float)$z['lng'], (float)$lat, (float)$lng);
     $first = explode(' ', trim($S['orgs'][$oid]['n']))[0];
-    if ($d > (float)$z['r'] + min(max($acc, 0.0), 60.0)) {
+    if ($poly) {
+        if ($acc > 150) out(422, ['error' => 'acc', 'msg' => 'إشارة الموقع ضعيفة الآن (الدقة قرابة ' . (int)round($acc) . ' متر). انتظر لحظات أو اقترب من نافذة، ثم أعد المحاولة.']);
+        $inside = in_poly($poly, (float)$lat, (float)$lng);
+        $d = $inside ? 0.0 : poly_edge_m($poly, (float)$lat, (float)$lng);
+        if (!$inside && $d > min(max($acc, 0.0), 20.0)) {
+            save($S, false);
+            $far = $d >= 1000 ? round($d / 1000, 1) . ' كم' : (string)(int)round($d) . ' متر';
+            out(403, ['error' => 'far', 'dist' => (int)round($d), 'name' => $first, 'msg' => 'أنت خارج حدود الجامعة، وتبعد عن سورها قرابة ' . $far . '. سجّل حضورك من داخل الجامعة.']);
+        }
+    } elseif (($d = dist_m((float)$z['lat'], (float)$z['lng'], (float)$lat, (float)$lng)) > (float)$z['r'] + min(max($acc, 0.0), 60.0)) {
         save($S, false);
         $far = $d >= 1000 ? round($d / 1000, 1) . ' كم' : (string)(int)round($d) . ' متر';
         out(403, ['error' => 'far', 'dist' => (int)round($d), 'name' => $first, 'msg' => 'أنت خارج منطقة الجامعة، وتبعد عنها قرابة ' . $far . '. سجّل حضورك من داخل الجامعة.']);
@@ -607,8 +635,22 @@ switch ($r) {
             $z['lat'] = round((float)$la, 6); $z['lng'] = round((float)$lo, 6);
         }
         if (isset($b['r']) && is_numeric($b['r'])) $z['r'] = max(50, min(3000, (int)$b['r']));
+        if (array_key_exists('poly', $b)) {
+            $pp = $b['poly'];
+            if ($pp === null || $pp === [] || $pp === false) $z['poly'] = null;
+            else {
+                if (!is_array($pp) || count($pp) < 3 || count($pp) > 300) out(400, ['error' => 'poly', 'msg' => 'حدود المنطقة غير صحيحة']);
+                $q = [];
+                foreach ($pp as $pt) {
+                    if (!is_array($pt) || !is_numeric($pt[0] ?? null) || !is_numeric($pt[1] ?? null) || abs((float)$pt[0]) > 90 || abs((float)$pt[1]) > 180) out(400, ['error' => 'poly', 'msg' => 'حدود المنطقة غير صحيحة']);
+                    $q[] = [round((float)$pt[0], 7), round((float)$pt[1], 7)];
+                }
+                $z['poly'] = $q;
+                if (!array_key_exists('lat', $b)) { $z['lat'] = round(array_sum(array_column($q, 0)) / count($q), 6); $z['lng'] = round(array_sum(array_column($q, 1)) / count($q), 6); }
+            }
+        }
         if (array_key_exists('on', $b)) $z['on'] = (bool)$b['on'];
-        if (!empty($z['on']) && !is_numeric($z['lat'] ?? null)) out(400, ['error' => 'loc', 'msg' => 'حدّد موقع الجامعة أول']);
+        if (!empty($z['on']) && !zone_poly($z) && !is_numeric($z['lat'] ?? null)) out(400, ['error' => 'loc', 'msg' => 'حدّد موقع الجامعة أول']);
         $S['settings']['zone'] = $z;
         odone($S, $me);
     }
