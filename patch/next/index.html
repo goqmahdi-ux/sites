@@ -5384,6 +5384,8 @@ const st=document.createElement('style');st.textContent=`
 #orgM .waGo{background:#16a34a!important;border-color:#16a34a!important;color:#fff!important;font-size:16px;padding:13px;text-align:center;text-decoration:none}
 #orgM .waL{display:flex;flex-direction:column;max-height:200px;overflow:auto;border:1px solid rgba(0,0,0,.08);border-radius:12px;margin-top:12px}#orgM .waL button{font:inherit;font-size:13.5px;display:flex;align-items:center;gap:8px;text-align:start;border:0;border-bottom:1px solid rgba(0,0,0,.05);background:#fff;padding:8px 10px;cursor:pointer;color:#3a2a31}#orgM .waL button span{min-width:24px;color:#a8a29e;font-size:12px}#orgM .waL button i{margin-inline-start:auto;font-style:normal;color:#15803d;font-weight:700}#orgM .waL button.cur{background:#fbf3f6;font-weight:700}#orgM .waL button.ok{color:#15803d}
 #orgM .tb{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:7px;padding:2px 8px;background:#f6f3f0;color:#3a2a31}#orgM .tb i{width:9px;height:9px;border-radius:50%;display:inline-block}
+#orgM .waH{display:flex;flex-direction:column;gap:6px}#orgM .waH button{font:inherit;text-align:start;border:1.5px solid #e4ddd8;background:#fff;border-radius:12px;padding:9px 12px;cursor:pointer;color:#3a2a31}#orgM .waH button b{display:block;font-size:13.5px}#orgM .waH button small{display:block;color:#8a7f78;font-size:12px;margin-top:2px}#orgM .waH button.on{border-color:#16a34a;background:#f0fbf4}
+#orgP .wl{font-size:12px;color:#15803d;background:#f0fbf4;border-radius:8px;padding:3px 8px;display:inline-block}
 #orgM .sw{display:flex;gap:8px;flex-wrap:wrap}#orgM .sw button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);cursor:pointer}#orgM .sw button.on{box-shadow:0 0 0 3px #1a1216}
 #orgM .ml{max-height:240px;overflow:auto;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:4px 8px;margin-top:6px}#orgM .ml label{display:flex;align-items:center;gap:8px;margin:0;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:13.5px}#orgM .ml label small{margin-inline-start:auto;color:#8a7f78}
 #orgP .empty{grid-column:1/-1;text-align:center;color:#8a7f78;padding:40px}
@@ -5443,14 +5445,14 @@ function render(){
   <span class="pill ${a?'in':''}">${a?'حضر '+hhmm(a.t)+(a.by&&a.by!=='gps'?' (يدوي)':''):day>D.today?'بعده':'ما حضر'}</span></div>
   <div class="dd">${days().map(d=>{const x=(o.att||{})[d];return`<span class="${x?'y':d<D.today?'n':''}${d===day?' cur':''}" title="${dayLbl(d)}">${wd(d).split(' ')[0]} ${dtype(d)} ${x?'✓':d<D.today?'✗':'·'}</span>`}).join('')}</div>
   <div class="ocB">${o.ph?`<div><a href="tel:${esc(o.ph)}">${esc(o.ph)}</a> · <a href="${wa(o.ph,'')}" target="_blank" rel="noopener">واتساب</a></div>`:'<div class="rl">بدون رقم</div>'}
-  <div class="tags">${teamOf(o.id)?`<span class="tb"><i style="background:${teamOf(o.id).color}"></i>${esc(teamOf(o.id).n)}${teamOf(o.id).lead===o.id?' · مسؤول':''}</span>`:''}${o.shift?`<span class="sh ${o.shift}" title="${SHIFT[o.shift]}">${SHS[o.shift]}</span>`:''}${o.fu?'<span class="fu">حدّث معلوماته</span>':''}</div>${o.vote&&o.vote.how==='name'?`<div class="vw">صوّت من رقم ثاني: <bdi>${esc(o.vote.ph)}</bdi></div>`:''}${o.vote&&!o.vote.nameOk?`<div class="vw">صوّت باسم: ${esc(o.vote.n)}</div>`:''}${o.uni||o.spec?`<div>${esc([o.uni,o.spec].filter(Boolean).join(' · '))}</div>`:''}${o.avt||o.avail?`<div>التواجد: ${esc([o.avt,o.avail].filter(Boolean).join(' · '))}</div>`:''}${tags.length?`<div class="tags">${tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}</div>
+  <div class="tags">${teamOf(o.id)?`<span class="tb"><i style="background:${teamOf(o.id).color}"></i>${esc(teamOf(o.id).n)}${teamOf(o.id).lead===o.id?' · مسؤول':''}</span>`:''}${o.shift?`<span class="sh ${o.shift}" title="${SHIFT[o.shift]}">${SHS[o.shift]}</span>`:''}${o.fu?'<span class="fu">حدّث معلوماته</span>':''}</div>${o.vote&&o.vote.how==='name'?`<div class="vw">صوّت من رقم ثاني: <bdi>${esc(o.vote.ph)}</bdi></div>`:''}${o.vote&&!o.vote.nameOk?`<div class="vw">صوّت باسم: ${esc(o.vote.n)}</div>`:''}${waLastH(o.id)}${o.uni||o.spec?`<div>${esc([o.uni,o.spec].filter(Boolean).join(' · '))}</div>`:''}${o.avt||o.avail?`<div>التواجد: ${esc([o.avt,o.avail].filter(Boolean).join(' · '))}</div>`:''}${tags.length?`<div class="tags">${tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}</div>
   <div class="ocF">${o.uid?`<span class="pin" title="رمز الدخول">${esc(o.pin||'••••••')}</span><span class="rl">${esc(roleOf(o))}</span><button class="btn secondary" data-a="acc">الصلاحية</button>`:`<button class="btn primary" data-a="acc">إعطاء دخول</button>`}
   <button class="btn secondary" data-a="edit">تعديل</button><button class="btn secondary" data-a="mark">${a?'إلغاء الحضور':'حضور يدوي'}</button></div></div>`}).join(''):'<div class="empty">ماكو منظمين بهذا البحث</div>';
 }
 const load=async()=>{try{D=await api('orgs/list');render()}catch(e){toast(e.message,1)}};
 setInterval(()=>{if(P.classList.contains('on')&&!M.classList.contains('on')&&!document.hidden)api('orgs/list').then(j=>{D=j;render()}).catch(()=>{})},20000);
 const apply=j=>{if(j&&j.orgs){D=j;render()}};
-async function open(){P.classList.add('on');const c=$('#closeAdmin');c&&$('#drawer').classList.contains('open')&&c.click();render();await load()}
+async function open(){P.classList.add('on');const c=$('#closeAdmin');c&&$('#drawer').classList.contains('open')&&c.click();render();await load();waSyncAll().then(()=>render())}
 $('#opClose').onclick=()=>P.classList.remove('on');
 $('#opQ').oninput=e=>{q=e.target.value;render()};$('#opF').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.wa){waQ();return}flt=b.dataset.f;render()};
 $('#opFld').onchange=e=>{fld=e.target.value;render()};$('#opTeam').onchange=e=>{tf=e.target.value;render()};$('#opDays').onclick=e=>{const b=e.target.closest('button');if(b){day=b.dataset.d;render()}};
@@ -5555,14 +5557,24 @@ const WTPL=[
 function waFill(txt,o){const t=teamOf(o.id);return String(txt).replace(/\{الاسم\}/g,fname(o.n)).replace(/\{الاسم الكامل\}/g,o.n||'')
  .replace(/\{الفريق\}/g,t?t.n:'فريق التنظيم').replace(/\{المكان\}/g,t?(t.place||(typeof TAR!=='undefined'&&TAR[tAr(t)]?TAR[tAr(t)].n:'')):'يتحدد لاحقاً').replace(/\{المهمة\}/g,t&&t.task?t.task:'تتبلغ بيها من المسؤول').replace(/\{المسؤول\}/g,t&&t.lead?nm(t.lead):'الإدارة').replace(/\{الوجبة\}/g,o.shift?SHS[o.shift]:'ما محددة')}
 const waKey=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return 'ks-wa-'+(h>>>0).toString(36)};
-const waGet=k=>{try{return new Set(JSON.parse(localStorage.getItem(k)||'[]'))}catch(e){return new Set()}};
-const waSet=(k,s)=>{try{localStorage.setItem(k,JSON.stringify([...s]))}catch(e){}};
+const waLbl=txt=>{const L=String(txt||'').split('\n').map(s=>s.trim()).filter(Boolean);const x=L.find(s=>!/^السلام/.test(s))||L[0]||'رسالة';return x.replace(/\{[^}]+\}/g,'').replace(/\s+/g,' ').trim().slice(0,60)||'رسالة'};
+const waLoc=k=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');if(Array.isArray(v))return{s:v,txt:''};return v&&typeof v==='object'?{s:v.s||[],txt:v.txt||''}:{s:[],txt:''}}catch(e){return{s:[],txt:''}}};
+const waSrv=k=>((D.wa||[]).find(c=>c.k===k)||{}).s||{};
+const waGet=k=>new Set([...waLoc(k).s,...Object.keys(waSrv(k))]);
+const waSet=(k,s,txt)=>{try{localStorage.setItem(k,JSON.stringify({s:[...s],txt:txt||waLoc(k).txt||''}))}catch(e){}};
+async function waPush(k,ids,txt,extra){try{const j=await api('wa/mark',Object.assign({k,ids,txt:txt||'',l:txt?waLbl(txt):''},extra||{}));if(j&&j.wa)D.wa=j.wa;return 1}catch(e){return 0}}
+let waSyncing=0;
+async function waSyncAll(){if(waSyncing)return;waSyncing=1;try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^ks-wa-[a-z0-9]+$/.test(k))ks.push(k)}
+ for(const k of ks){const L=waLoc(k),sv=waSrv(k),miss=L.s.filter(id=>!sv[id]&&D.orgs.some(o=>o.id===id));if(miss.length)await waPush(k,miss,L.txt,L.txt?null:{l:'رسالة من جهاز ثاني'})}}catch(e){}waSyncing=0}
+const waAgo=u=>{try{return new Date(u*1000).toLocaleString('ar-IQ',{weekday:'long',hour:'numeric',minute:'2-digit'})}catch(e){return''}};
+const waLastH=id=>{let b=null;for(const c of D.wa||[]){const t=(c.s||{})[id];if(t&&(!b||t>b.t))b={t,l:c.l}}return b?`<div class="wl">آخر رسالة واتساب: ${esc(b.l||'رسالة')} · ${hhmm(b.t)}</div>`:''};
 function waQ(){const all=curL(),R=all.filter(o=>waNum(o.ph).length>=11),miss=all.length-R.length;
  if(!all.length){toast('ماكو منظمين بهذا الفلتر',1);return}
  const desc=[FLBL[flt]||'الكل',(flt==='in'||flt==='out')?wdn(day):'',tf?(tf==='none'?'بدون فريق':((D.teams||[]).find(t=>t.id===tf)||{}).n):'',fld,q.trim()?'بحث: '+q.trim():''].filter(Boolean).join(' · ');
- let tk=flt==='sn'?'vote':(flt==='out'||flt==='in')?'in':(tf&&tf!=='none')?'team':flt==='fu'?'free':'info',txt=WTPL.find(x=>x.k===tk).t(),i=0,sent=new Set(),key='';
+ let fk='',tk=flt==='sn'?'vote':(flt==='out'||flt==='in')?'in':(tf&&tf!=='none')?'team':flt==='fu'?'free':'info',txt=WTPL.find(x=>x.k===tk).t(),i=0,sent=new Set(),key='';
  const compose=()=>{openM(`<h3>مراسلة واتساب</h3>
   <div class="waI"><b>${R.length}</b> منظم راح توصلهم الرسالة<small>الفلتر: ${esc(desc)}${miss?` · ${miss} بدون رقم ينشالون`:''}</small></div>
+  ${(D.wa||[]).length?`<label>رسائل سابقة (اضغط وحدة حتى تكمل منها)<div class="waH" id="wH">${(D.wa||[]).slice(0,6).map(c=>`<button type="button" data-k="${c.k}" class="${fk===c.k?'on':''}"><b>${esc(c.l||'رسالة')}</b><small>وصلت لـ ${Object.keys(c.s||{}).length} منظم${c.u?' · '+waAgo(c.u):''}</small></button>`).join('')}</div></label>`:''}
   <label>نوع الرسالة<div class="tpArs" id="wK">${WTPL.map(x=>`<button type="button" data-k="${x.k}" style="--c:#5a1238" class="${x.k===tk?'on':''}">${x.l}</button>`).join('')}</div></label>
   <label>الرسالة<textarea class="inp" id="wT" rows="7" dir="rtl">${esc(txt)}</textarea></label>
   <div class="note">تقدر تكتب {الاسم} وينكتب اسم كل منظم لحاله. وهم: {الاسم الكامل}، {الفريق}، {المكان}، {المهمة}، {المسؤول}، {الوجبة}</div>
@@ -5571,10 +5583,11 @@ function waQ(){const all=curL(),R=all.filter(o=>waNum(o.ph).length>=11),miss=all
   <div class="row"><button class="btn primary" id="wGo">ابدأ: افتح واتساب واحد واحد</button><button class="btn secondary" id="wX">إغلاق</button></div>`);
   const pv=()=>{txt=mc.querySelector('#wT').value;mc.querySelector('#wP').textContent=R[0]?waFill(txt,R[0]):''};pv();
   mc.querySelector('#wT').oninput=pv;
-  mc.querySelector('#wK').onclick=e=>{const b=e.target.closest('button');if(!b)return;tk=b.dataset.k;mc.querySelectorAll('#wK button').forEach(x=>x.classList.toggle('on',x===b));mc.querySelector('#wT').value=WTPL.find(x=>x.k===tk).t();pv()};
+  const wh=mc.querySelector('#wH');wh&&(wh.onclick=e=>{const b=e.target.closest('button');if(!b)return;const c=(D.wa||[]).find(x=>x.k===b.dataset.k);if(!c)return;fk=fk===c.k?'':c.k;wh.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.k===fk));if(fk&&c.txt){mc.querySelector('#wT').value=c.txt;mc.querySelectorAll('#wK button').forEach(x=>x.classList.remove('on'))}mc.querySelector('#wE').textContent=fk&&!c.txt?'هاي الرسالة انبعثت من جهاز ثاني بدون نصها، الصق نفس الرسالة بالمربع وكمّل':'';pv()});
+  mc.querySelector('#wK').onclick=e=>{const b=e.target.closest('button');if(!b)return;fk='';wh&&wh.querySelectorAll('button').forEach(x=>x.classList.remove('on'));tk=b.dataset.k;mc.querySelectorAll('#wK button').forEach(x=>x.classList.toggle('on',x===b));mc.querySelector('#wT').value=WTPL.find(x=>x.k===tk).t();pv()};
   mc.querySelector('#wX').onclick=closeM;
   mc.querySelector('#wGo').onclick=()=>{txt=mc.querySelector('#wT').value;if(!txt.trim()){mc.querySelector('#wE').textContent='اكتب الرسالة';return}if(!R.length){mc.querySelector('#wE').textContent='ماكو أرقام بهذا الفلتر';return}
-   key=waKey(txt);sent=waGet(key);i=Math.max(0,R.findIndex(o=>!sent.has(o.id)));queue()}};
+   key=fk||waKey(txt);sent=waGet(key);const sv=waSrv(key),loc=[...sent].filter(id=>!sv[id]);if(loc.length)waPush(key,loc,txt);i=Math.max(0,R.findIndex(o=>!sent.has(o.id)));queue()}};
  const queue=()=>{const o=R[i],m=waFill(txt,o),t=teamOf(o.id),done=R.filter(x=>sent.has(x.id)).length,all_=done===R.length;
   openM(`<h3>مراسلة واتساب <small class="waN">${i+1} من ${R.length}</small></h3>
   <div class="waBar"><i style="width:${done/R.length*100}%"></i></div><div class="note">انبعثت لـ ${done} من ${R.length}${all_?' · خلصت الكل ✓':''}</div>
@@ -5585,12 +5598,12 @@ function waQ(){const all=curL(),R=all.filter(o=>waNum(o.ph).length>=11),miss=all
   <div class="waL" id="wL">${R.map((x,j)=>`<button type="button" data-j="${j}" class="${j===i?'cur ':''}${sent.has(x.id)?'ok':''}"><span>${j+1}</span>${esc(x.n)}${sent.has(x.id)?'<i>✓</i>':''}</button>`).join('')}</div>
   <div class="row"><button class="btn secondary" id="wBack">تعديل الرسالة</button><button class="btn secondary" id="wReset">صفّر المبعوث</button><button class="btn secondary" id="wX">إنهاء</button></div>`);
   const cur=mc.querySelector('#wL .cur');cur&&cur.scrollIntoView({block:'nearest'});
-  mc.querySelector('#wOpen').onclick=()=>{sent.add(o.id);waSet(key,sent);setTimeout(()=>{const n=R.findIndex((x,j)=>j>i&&!sent.has(x.id));if(n>=0)i=n;else if(i<R.length-1)i++;queue()},400)};
+  mc.querySelector('#wOpen').onclick=()=>{sent.add(o.id);waSet(key,sent,txt);waPush(key,[o.id],txt).then(ok=>{if(!ok)toast('ما انحفظ بالسيرفر هسه، راح ينحفظ من تفتح الصفحة مرة ثانية',1)});setTimeout(()=>{const n=R.findIndex((x,j)=>j>i&&!sent.has(x.id));if(n>=0)i=n;else if(i<R.length-1)i++;queue()},400)};
   mc.querySelector('#wPrev').onclick=()=>{if(i>0){i--;queue()}};
   mc.querySelector('#wSkip').onclick=()=>{if(i<R.length-1){i++;queue()}};
   mc.querySelector('#wL').onclick=e=>{const b=e.target.closest('[data-j]');if(b){i=+b.dataset.j;queue()}};
   mc.querySelector('#wBack').onclick=compose;
-  mc.querySelector('#wReset').onclick=()=>{if(confirm('ترجع كلهم مو مبعوث إلهم؟')){sent=new Set();waSet(key,sent);i=0;queue()}};
+  mc.querySelector('#wReset').onclick=()=>{if(confirm('ترجع كلهم مو مبعوث إلهم؟')){sent=new Set();waSet(key,sent,txt);waPush(key,[],txt,{reset:1});i=0;queue()}};
   mc.querySelector('#wX').onclick=closeM};
  compose()}
 function votes(){const c=counts(),L=D.loose||[],W=D.orgs.filter(vwarn),by=k=>D.orgs.filter(o=>o.shift===k).sort((a,b)=>String(a.n).localeCompare(String(b.n),'ar'));

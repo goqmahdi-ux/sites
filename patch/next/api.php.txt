@@ -38,7 +38,7 @@ function f_ver(): string { return data_dir() . '/ver'; }
 
 function fresh(): array {
     return ['version' => 1, 'seats' => [], 'guests' => [], 'jobs' => [], 'jobSeq' => 0, 'users' => [], 'sessions' => [],
-        'fails' => [], 'orgs' => [], 'ofails' => [], 'oform' => [], 'votes' => [], 'teams' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
+        'fails' => [], 'orgs' => [], 'ofails' => [], 'oform' => [], 'votes' => [], 'teams' => [], 'wa' => [], 'settings' => ['zone' => ['lat' => null, 'lng' => null, 'r' => 300, 'on' => false, 'poly' => null], 'stickerW' => 75, 'stickerH' => 35, 'title' => 'المؤتمر العلمي الدولي الأول',
             'subtitle' => 'مستشفى السيدة خديجة الكبرى (ع) التخصصي للمرأة', 'printMode' => 'auto', 'printer' => '',
             'gap' => 3, 'density' => 10, 'flip' => false, 'offsetX' => 0]];
 }
@@ -51,7 +51,7 @@ function load(): array {
     $set = array_merge($b['settings'], (array)($s['settings'] ?? []));
     $s = array_merge($b, $s);
     $s['settings'] = $set;
-    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform', 'votes', 'teams'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
+    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform', 'votes', 'teams', 'wa'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
     if (!is_array($s['settings']['zone'] ?? null)) $s['settings']['zone'] = $b['settings']['zone'];
     // كراسي ما موجودة بترتيب القاعة الحالي تنشال، وضيوفها يرجعون للقائمة
     foreach (array_keys($s['seats']) as $sid) if (!seat_rc((string)$sid)) {
@@ -257,10 +257,21 @@ function teams_out(array $S): array {
     usort($out, fn($a, $b) => ($a['ct'] ?? 0) <=> ($b['ct'] ?? 0));
     return $out;
 }
+// رسائل الواتساب: لكل رسالة منو انبعثتله (تنحفظ بالسيرفر حتى تبين بكل الأجهزة)
+function wa_out(array $S): array {
+    $o = [];
+    foreach (($S['wa'] ?? []) as $k => $c) {
+        $s = [];
+        foreach ((array)($c['s'] ?? []) as $id => $t) if (isset($S['orgs'][$id])) $s[(string)$id] = (int)$t;
+        $o[] = ['k' => (string)$k, 'l' => (string)($c['l'] ?? ''), 'txt' => (string)($c['txt'] ?? ''), 't' => (int)($c['t'] ?? 0), 'u' => (int)($c['u'] ?? 0), 's' => (object)$s];
+    }
+    usort($o, fn($a, $b) => $b['u'] <=> $a['u']);
+    return $o;
+}
 function org_res(array $S): array {
     $ad = [];
     foreach ($S['users'] as $uid => $u) if ($u['role'] === 'admin') $ad[] = ['id' => $uid, 'name' => $u['name']];
-    return ['orgs' => orgs_out($S), 'zone' => $S['settings']['zone'], 'today' => date('Y-m-d'), 'admins' => $ad, 'loose' => votes_loose($S), 'nvotes' => count($S['votes']), 'teams' => teams_out($S), 'tpl' => (object)($S['settings']['tpl'] ?? [])];
+    return ['orgs' => orgs_out($S), 'zone' => $S['settings']['zone'], 'today' => date('Y-m-d'), 'admins' => $ad, 'loose' => votes_loose($S), 'nvotes' => count($S['votes']), 'teams' => teams_out($S), 'tpl' => (object)($S['settings']['tpl'] ?? []), 'wa' => wa_out($S)];
 }
 function remove_user(array &$S, string $uid): void {
     unset($S['users'][$uid]);
@@ -749,6 +760,31 @@ switch ($r) {
         }
         $S['settings']['tpl'] = $pl;
         odone($S, $me);
+    }
+    case 'wa/mark': {
+        if (!$admin) deny();
+        $k = (string)($b['k'] ?? '');
+        if (!preg_match('/^[a-z0-9\-]{3,40}$/', $k)) out(400, ['error' => 'bad', 'msg' => 'رسالة غير معروفة']);
+        $c = $S['wa'][$k] ?? ['l' => '', 'txt' => '', 't' => time(), 's' => []];
+        if (!is_array($c['s'] ?? null)) $c['s'] = [];
+        if (is_string($b['txt'] ?? null) && trim($b['txt']) !== '') $c['txt'] = mb_substr($b['txt'], 0, 3000);
+        if (is_string($b['l'] ?? null) && trim($b['l']) !== '') $c['l'] = mb_substr(trim($b['l']), 0, 80);
+        if (!empty($b['reset'])) $c['s'] = [];
+        $on = !array_key_exists('on', $b) || !empty($b['on']);
+        foreach (array_slice((array)($b['ids'] ?? []), 0, 3000) as $id) {
+            $id = (string)$id;
+            if (!isset($S['orgs'][$id])) continue;
+            if ($on) $c['s'][$id] = $c['s'][$id] ?? (int)round(microtime(true) * 1000);
+            else unset($c['s'][$id]);
+        }
+        $c['u'] = time();
+        $S['wa'][$k] = $c;
+        if (count($S['wa']) > 40) {
+            uasort($S['wa'], fn($a, $b) => ($b['u'] ?? 0) <=> ($a['u'] ?? 0));
+            $S['wa'] = array_slice($S['wa'], 0, 40, true);
+        }
+        save($S, false);
+        out(200, ['ok' => true, 'wa' => wa_out($S)]);
     }
     case 'teams/delete': {
         if (!$admin) deny();
