@@ -92,6 +92,9 @@ function seat_rc(string $sid): ?array {
     $r = (int)$m[1]; $c = (int)$m[2];
     return ($r >= 1 && $r <= ROWS && $c >= 1 && $c <= COLS) ? [$r, $c] : null;
 }
+/* تقسيم حسب الجنس: القسم B (كراسي 11-20) كله رجال، والصف الأول من القسم A رجال، وباقي A والقسم C كله نساء */
+function zone_g(int $r, int $c): string { return (($c >= 11 && $c <= 20) || ($c <= 10 && $r === 1)) ? 'm' : 'f'; }
+function g_lbl(string $g): string { return $g === 'm' ? 'للرجال' : 'للنساء'; }
 function cat_of_seat(string $sid): string { return seat_rc($sid)[0] <= VIP_ROWS ? 'VIP' : 'عادي'; }
 function hash_pin(string $pin, string $salt): string { return hash('sha256', $salt . ':' . $pin); }
 function valid_pin($pin): bool { return is_string($pin) && preg_match('/^\d{4,8}$/', $pin) === 1; }
@@ -387,15 +390,21 @@ switch ($r) {
             unset($S['seats'][$g['s']]);
             $S['guests'][$gid]['s'] = null;
         }
+        $gd = in_array($b['gd'] ?? null, ['m', 'f'], true) ? $b['gd'] : (in_array($g['gd'] ?? null, ['m', 'f'], true) ? $g['gd'] : null);
         $seat = null;
-        if ($want !== '' && seat_rc($want) && !isset($S['seats'][$want])) { $seat = $want; $cat = cat_of_seat($want); }
-        if (!$seat) {
-            [$a, $z] = $cat === 'VIP' ? [1, VIP_ROWS] : [VIP_ROWS + 1, ROWS];
-            for ($rr = $a; $rr <= $z && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (!isset($S['seats'][$sid])) { $seat = $sid; break; } }
+        if ($want !== '' && seat_rc($want) && !isset($S['seats'][$want])) {
+            [$wr, $wc] = seat_rc($want); $zg = zone_g($wr, $wc);
+            if ($gd && $gd !== $zg) out(409, ['error' => 'gender', 'msg' => 'هذا الكرسي مخصّص ' . g_lbl($zg) . ' فقط']);
+            $seat = $want; $cat = cat_of_seat($want); $gd = $zg;
         }
-        if (!$seat) out(409, ['error' => 'full', 'msg' => 'ماكو مقاعد فارغة بهذي الفئة']);
+        if (!$seat) {
+            if (!$gd) out(400, ['error' => 'gd', 'msg' => 'اختار الفئة: رجال أو نساء']);
+            [$a, $z] = $cat === 'VIP' ? [1, VIP_ROWS] : [VIP_ROWS + 1, ROWS];
+            for ($rr = $a; $rr <= $z && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (zone_g($rr, $cc) === $gd && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
+        }
+        if (!$seat) out(409, ['error' => 'full', 'msg' => 'ماكو مقاعد فارغة بهذي الفئة (' . ($cat === 'VIP' ? 'VIP' : 'عادي') . ' ' . ($gd === 'm' ? 'رجال' : 'نساء') . ')']);
         if (!$g) { $gid = 'g' . rid(5); $S['guests'][$gid] = ['n' => mb_substr($name, 0, 80), 'c' => $cat, 's' => null]; }
-        $S['guests'][$gid]['s'] = $seat; $S['guests'][$gid]['c'] = $cat;
+        $S['guests'][$gid]['s'] = $seat; $S['guests'][$gid]['c'] = $cat; $S['guests'][$gid]['gd'] = $gd;
         $S['seats'][$seat] = ['n' => $S['guests'][$gid]['n'], 'c' => $cat, 't' => now_ms(), 'g' => $gid, 'by' => $me['name'], 'bu' => $me['uid']];
         $job = can($me, 'print') ? add_job($S, $me, $seat, $S['guests'][$gid]['n']) : null;
         done($S, $me, ['ok' => true, 'seat' => $seat, 'guestId' => $gid, 'job' => $job]);
@@ -452,7 +461,7 @@ switch ($r) {
         foreach ((array)($b['items'] ?? []) as $it) {
             $nm = trim((string)($it['n'] ?? ''));
             if ($nm === '') continue;
-            $S['guests']['g' . rid(5)] = ['n' => mb_substr($nm, 0, 80), 'c' => ($it['c'] ?? '') === 'VIP' ? 'VIP' : 'عادي', 's' => null];
+            $S['guests']['g' . rid(5)] = ['n' => mb_substr($nm, 0, 80), 'c' => ($it['c'] ?? '') === 'VIP' ? 'VIP' : 'عادي', 's' => null] + (in_array($it['gd'] ?? null, ['m', 'f'], true) ? ['gd' => $it['gd']] : []);
             $n++;
         }
         done($S, $me, ['ok' => true, 'added' => $n]);
