@@ -95,7 +95,9 @@ function seat_rc(string $sid): ?array {
 /* تقسيم حسب الجنس: القسم B (كراسي 11-20) كله رجال، والصف الأول من القسم A رجال، وباقي A والقسم C كله نساء */
 function zone_g(int $r, int $c): string { return (($c >= 11 && $c <= 20) || ($c <= 10 && $r === 1)) ? 'm' : 'f'; }
 function g_lbl(string $g): string { return $g === 'm' ? 'للرجال' : 'للنساء'; }
-function cat_of_seat(string $sid): string { return seat_rc($sid)[0] <= VIP_ROWS ? 'VIP' : 'عادي'; }
+/* صفوف VIP: القسم B (كراسي 11-20) أول 3 صفوف، والقسمين A و C أول صفين */
+function is_vip(int $r, int $c): bool { return $r <= (($c >= 11 && $c <= 20) ? 3 : 2); }
+function cat_of_seat(string $sid): string { [$r, $c] = seat_rc($sid); return is_vip($r, $c) ? 'VIP' : 'عادي'; }
 function hash_pin(string $pin, string $salt): string { return hash('sha256', $salt . ':' . $pin); }
 function valid_pin($pin): bool { return is_string($pin) && preg_match('/^\d{4,8}$/', $pin) === 1; }
 function user_by_pin(array $S, string $pin): ?string {
@@ -399,8 +401,7 @@ switch ($r) {
         }
         if (!$seat) {
             if (!$gd) out(400, ['error' => 'gd', 'msg' => 'اختار الفئة: رجال أو نساء']);
-            [$a, $z] = $cat === 'VIP' ? [1, VIP_ROWS] : [VIP_ROWS + 1, ROWS];
-            for ($rr = $a; $rr <= $z && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (zone_g($rr, $cc) === $gd && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
+            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (is_vip($rr, $cc) === ($cat === 'VIP') && zone_g($rr, $cc) === $gd && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
         }
         if (!$seat) out(409, ['error' => 'full', 'msg' => 'ماكو مقاعد فارغة بهذي الفئة (' . ($cat === 'VIP' ? 'VIP' : 'عادي') . ' ' . ($gd === 'm' ? 'رجال' : 'نساء') . ')']);
         if (!$g) { $gid = 'g' . rid(5); $S['guests'][$gid] = ['n' => mb_substr($name, 0, 80), 'c' => $cat, 's' => null]; }
