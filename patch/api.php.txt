@@ -668,6 +668,12 @@ switch ($r) {
         if (!$admin) deny();
         out(200, array_merge(['ok' => true], org_res($S)));
     }
+    case 'backup': {
+        if (!$admin) deny();
+        $o = $S; unset($o['sessions'], $o['fails'], $o['ofails'], $o['oform']);
+        $bk = glob(data_dir() . '/backups/data-*.json') ?: [];
+        out(200, ['ok' => true, 't' => date('Y-m-d H:i'), 'serverBackups' => count($bk), 'data' => $o]);
+    }
     case 'orgs/save': {
         if (!$admin) deny();
         $id = (string)($b['id'] ?? '');

@@ -5283,7 +5283,7 @@ const st=document.createElement('style');st.textContent=`
 document.head.appendChild(st);
 const P=document.createElement('div');P.id='orgP';P.setAttribute('role','dialog');P.setAttribute('aria-label','المنظمين');
 P.innerHTML=`<div class="opTop"><div><h2>المنظمين</h2><div class="opSub" id="opSub"></div></div><div class="opAct">
-<button class="btn primary" id="opAdd">+ إضافة منظم</button><button class="btn secondary" id="opZone">منطقة الحضور</button><button class="btn secondary" id="opVote">نتائج التصويت</button><button class="btn secondary" id="opLink">روابط المنظمين</button><button class="btn secondary" id="opCsv">تصدير Excel</button><button class="btn secondary" id="opClose">رجوع</button></div></div>
+<button class="btn primary" id="opAdd">+ إضافة منظم</button><button class="btn secondary" id="opZone">منطقة الحضور</button><button class="btn secondary" id="opVote">نتائج التصويت</button><button class="btn secondary" id="opLink">روابط المنظمين</button><button class="btn secondary" id="opCsv">تصدير Excel</button><button class="btn secondary" id="opBk">نسخة احتياطية</button><button class="btn secondary" id="opClose">رجوع</button></div></div>
 <div class="opBar"><input class="inp" id="opQ" type="search" placeholder="ابحث بالاسم أو الرقم أو السكن أو الجامعة"><div class="chips" id="opF"></div>
 <select class="os" id="opFld" aria-label="المجال"><option value="">كل المجالات</option>${FIELDS.map(f=>`<option>${f}</option>`).join('')}</select><select class="os" id="opDay" aria-label="يوم الحضور"></select></div>
 <div class="opList" id="opList"></div>`;
@@ -5425,12 +5425,14 @@ function votes(){const c=counts(),L=D.loose||[],W=D.orgs.filter(vwarn),by=k=>D.o
  mc.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const o=byId(b.dataset.e);o&&edit(o)});
  mc.querySelectorAll('[data-l]').forEach(b=>b.onclick=async()=>{const v=L[+b.dataset.l];try{apply(await api('orgs/save',{n:v.n,ph:v.ph,shift:v.shift,g:'f'}));toast('انضاف '+v.n+'، تأكد من الجنس');votes()}catch(e){toast(e.message,1)}});
 }
+async function backup(){try{const j=await api('backup');const blob=new Blob([JSON.stringify(j.data)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='khadija-backup-'+j.t.replace(/[: ]/g,'-')+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+ toast('نزلت نسخة كاملة: '+Object.keys(j.data.orgs||{}).length+' منظم، '+Object.keys(j.data.guests||{}).length+' ضيف. وبالسيرفر '+j.serverBackups+' نسخة')}catch(e){toast(e.message,1)}}
 function csv(){const H=['الاسم','الجنس','الهاتف','العمر','السكن','الجامعة أو الجهة','الاختصاص','وقت الحضور','الأيام المتاحة','مجالات المساهمة','الخبرة','حساب التواصل','دخول للنظام','المهمة','حدّث معلوماته',...days().map(d=>'حضور '+d)];
  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
  const rows=D.orgs.map(o=>[o.n,o.g==='m'?'ذكر':'أنثى',o.ph,o.age||'',o.area,o.uni,o.spec,SHIFT[o.shift]||'',o.avail,o.field,o.exp,o.soc,o.uid?roleOf(o):'',o.task||'',o.fu?'نعم':'',...days().map(d=>(o.att||{})[d]?hhmm(o.att[d].t):'')]);
  const blob=new Blob(['﻿'+[H,...rows].map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='المنظمين-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast('نزل ملف المنظمين')}
-$('#opAdd').onclick=()=>edit(null);$('#opZone').onclick=zone;$('#opLink').onclick=link;$('#opVote').onclick=votes;$('#opCsv').onclick=csv;
+$('#opAdd').onclick=()=>edit(null);$('#opZone').onclick=zone;$('#opLink').onclick=link;$('#opVote').onclick=votes;$('#opCsv').onclick=csv;$('#opBk').onclick=backup;
 /* زر بالإعدادات (للمدير) */
 const ico='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.6-.3 4.6 1.2 5 4.3"/></svg>';
 const dw=$('#drawer .dScroll');if(dw){const d=document.createElement('div');d.className='orgDrawer';d.innerHTML='<button class="btn secondary block" type="button" id="orgBtn">'+ico+'<span>المنظمين</span></button><p class="help">قائمة المنظمين، الدخول والصلاحيات برمز تلقائي، وحضورهم من داخل الجامعة.</p>';
