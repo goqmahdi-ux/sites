@@ -90,9 +90,11 @@ function lbl_of(int $r, int $c): string { return 'ABC'[intdiv($c - 1, 10)] . (($
 function seat_rc(string $sid): ?array {
     if (!preg_match('/^R(\d{1,2})-(\d{1,2})$/', $sid, $m)) return null;
     $r = (int)$m[1]; $c = (int)$m[2];
-    return ($r >= 1 && $r <= ROWS && $c >= 1 && $c <= COLS) ? [$r, $c] : null;
+    return ($r >= 1 && $r <= ROWS && $c >= 1 && $c <= COLS && seat_ok($r, $c)) ? [$r, $c] : null;
 }
 /* تقسيم حسب الجنس: القسم B (كراسي 11-20) كله رجال، والصف الأول من القسم A رجال، وباقي A والقسم C كله نساء */
+/* كراسي غير موجودة: A10 بالصف 11، و B10 بالصفوف الزوجية (القسم B يتناوب 10 و 9) */
+function seat_ok(int $r, int $c): bool { return !(($r === 11 && $c === 10) || ($c === 20 && $r % 2 === 0)); }
 function zone_g(int $r, int $c): string { return (($c >= 11 && $c <= 20) || ($c <= 10 && $r === 1)) ? 'm' : 'f'; }
 function g_lbl(string $g): string { return $g === 'm' ? 'للرجال' : 'للنساء'; }
 /* صفوف VIP: القسم B (كراسي 11-20) أول 3 صفوف، والقسمين A و C أول صفين */
@@ -401,7 +403,7 @@ switch ($r) {
         }
         if (!$seat) {
             if (!$gd) out(400, ['error' => 'gd', 'msg' => 'اختار الفئة: رجال أو نساء']);
-            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (is_vip($rr, $cc) === ($cat === 'VIP') && zone_g($rr, $cc) === $gd && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
+            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (seat_ok($rr, $cc) && is_vip($rr, $cc) === ($cat === 'VIP') && zone_g($rr, $cc) === $gd && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
         }
         if (!$seat) out(409, ['error' => 'full', 'msg' => 'ماكو مقاعد فارغة بهذي الفئة (' . ($cat === 'VIP' ? 'VIP' : 'عادي') . ' ' . ($gd === 'm' ? 'رجال' : 'نساء') . ')']);
         if (!$g) { $gid = 'g' . rid(5); $S['guests'][$gid] = ['n' => mb_substr($name, 0, 80), 'c' => $cat, 's' => null]; }
@@ -420,7 +422,7 @@ switch ($r) {
     case 'chair-print': {
         if (!can($me, 'print')) deny('الطباعة مو من صلاحياتك');
         $sid = (string)($b['seat'] ?? '');
-        if (!preg_match('/^R(\d+)-(\d+)$/', $sid, $mm) || $mm[1] < 1 || $mm[1] > ROWS || $mm[2] < 1 || $mm[2] > COLS) out(400, ['error' => 'seat', 'msg' => 'كرسي غير صحيح']);
+        if (!preg_match('/^R(\d+)-(\d+)$/', $sid, $mm) || $mm[1] < 1 || $mm[1] > ROWS || $mm[2] < 1 || $mm[2] > COLS || !seat_ok((int)$mm[1], (int)$mm[2])) out(400, ['error' => 'seat', 'msg' => 'كرسي غير صحيح']);
         $job = add_job($S, $me, $sid, 'ستكر كرسي', 'chair');
         done($S, $me, ['ok' => true, 'job' => $job]);
     }
