@@ -5386,6 +5386,7 @@ const st=document.createElement('style');st.textContent=`
 #orgM .tb{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:7px;padding:2px 8px;background:#f6f3f0;color:#3a2a31}#orgM .tb i{width:9px;height:9px;border-radius:50%;display:inline-block}
 #orgM .waH{display:flex;flex-direction:column;gap:6px}#orgM .waH button{font:inherit;text-align:start;border:1.5px solid #e4ddd8;background:#fff;border-radius:12px;padding:9px 12px;cursor:pointer;color:#3a2a31}#orgM .waH button b{display:block;font-size:13.5px}#orgM .waH button small{display:block;color:#8a7f78;font-size:12px;margin-top:2px}#orgM .waH button.on{border-color:#16a34a;background:#f0fbf4}
 #orgP .wl{font-size:12px;color:#15803d;background:#f0fbf4;border-radius:8px;padding:3px 8px;display:inline-block}
+#orgP .qbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7e6;border:1px solid #f5d9a8;color:#7a4b00;border-radius:12px;padding:8px 12px;font-size:13.5px;font-weight:600}#orgP .qbar button{margin-inline-start:auto;font:inherit;font-size:13px;font-weight:700;border:0;background:#7a4b00;color:#fff;border-radius:9px;padding:6px 12px;cursor:pointer}
 #orgM .sw{display:flex;gap:8px;flex-wrap:wrap}#orgM .sw button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);cursor:pointer}#orgM .sw button.on{box-shadow:0 0 0 3px #1a1216}
 #orgM .ml{max-height:240px;overflow:auto;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:4px 8px;margin-top:6px}#orgM .ml label{display:flex;align-items:center;gap:8px;margin:0;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:13.5px}#orgM .ml label small{margin-inline-start:auto;color:#8a7f78}
 #orgP .empty{grid-column:1/-1;text-align:center;color:#8a7f78;padding:40px}
@@ -5432,6 +5433,9 @@ function curL(){
   if(k){const h=nq([o.n,o.ph,o.area,o.uni,o.spec,o.field,o.soc].join(' '));if(!h.includes(k)&&!String(o.ph||'').includes(k.replace(/\D/g,'')||'§'))return!1}return!0})
   .sort((a,b)=>{const x=!!(a.att||{})[day],y=!!(b.att||{})[day];return(y-x)||String(a.n).localeCompare(String(b.n),'ar')});
 }
+function qAll(){const f0=flt,t0=tf,l0=fld;flt='all';tf='';fld='';const n=curL().length;flt=f0;tf=t0;fld=l0;return n}
+const qBar=L=>q.trim()?`<div class="qbar">تبحث عن «${esc(q.trim())}»${flt!=='all'?` ضمن «${esc(FLBL[flt]||'')}»`:''} · ${L.length} نتيجة<button type="button" data-clr="1">✕ امسح البحث</button></div>`:'';
+function emptyH(){const k=q.trim();if(!k)return'<div class="empty">ماكو منظمين بهذا الفلتر</div>';const n=qAll();return`<div class="empty">ماكو منظمين${flt!=='all'?` بـ«${esc(FLBL[flt]||'')}»`:''} يطابقون البحث «${esc(k)}»${n?`<br><small>البحث يطلع ${n} منظم بكل القائمة</small><br><button type="button" class="btn secondary" data-clr="all" style="margin-top:10px">شوفهم بالكل</button>`:''} <button type="button" class="btn primary" data-clr="1" style="margin-top:10px">امسح البحث</button></div>`}
 function render(){
  if(!day||!days().includes(day))day=D.today;
  const per=d=>D.orgs.filter(o=>(o.att||{})[d]).length;
@@ -5440,14 +5444,14 @@ function render(){
  const c=counts();$('#opSub').textContent=`${c.all} منظم · حضور التدريب: ${days().filter(d=>dtype(d)==='تدريب').map(d=>wdn(d)+': '+per(d)).join('، ')} · حضور التنظيم: ${days().filter(d=>dtype(d)==='تنظيم').map(d=>wdn(d)+': '+per(d)).join('، ')} · عندهم دخول للنظام ${c.acc} · صوّتوا ${c.vt} (الأولى ${c.sa}، الثانية ${c.sb})${(D.loose||[]).length?' · أصوات مو مربوطة '+D.loose.length:''} · حدّثوا معلوماتهم ${c.fu}`+(D.zone&&D.zone.on?'':' · منطقة الحضور غير مفعّلة');
  $('#opF').innerHTML=[['all','الكل',c.all],['in','حضروا '+wdn(day),c.in],['out','ما حضروا '+wdn(day),c.out],['acc','عندهم دخول',c.acc],['f','إناث',c.f],['m','ذكور',c.m],['sa','الوجبة الأولى',c.sa],['sb','الوجبة الثانية',c.sb],['sn','ما صوّتوا',c.sn],['fu','حدّثوا معلوماتهم',c.fu],['ad','متفرغين طول اليوم',c.ad],['vw','تنبيهات التصويت',c.vw]].map(([k,l,n])=>`<button data-f="${k}" class="${flt===k?'on':''}">${l}<b>${n}</b></button>`).join('')+`<button data-wa="1" class="wa" title="رسالة واتساب لكل الي بالقائمة، واحد واحد"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>راسل الي بالقائمة<b>${curL().filter(o=>waNum(o.ph).length>=11).length}</b></button>`;
  const L=curL();
- $('#opList').innerHTML=L.length?L.map(o=>{const a=(o.att||{})[day],tags=String(o.field||'').split(/[,،]/).map(s=>s.trim()).filter(Boolean);
+ $('#opList').innerHTML=qBar(L)+(L.length?L.map(o=>{const a=(o.att||{})[day],tags=String(o.field||'').split(/[,،]/).map(s=>s.trim()).filter(Boolean);
   return`<div class="oc" data-id="${o.id}"><div class="ocH"><span class="av ${o.g==='m'?'m':''}" aria-hidden="true">${esc(String(o.n).trim()[0]||'؟')}</span><div><b>${esc(o.n)}</b><small>${o.g==='m'?'ذكر':'أنثى'}${o.age?' · '+o.age+' سنة':''}${o.area?' · '+esc(o.area):''}</small></div>
   <span class="pill ${a?'in':''}">${a?'حضر '+hhmm(a.t)+(a.by&&a.by!=='gps'?' (يدوي)':''):day>D.today?'بعده':'ما حضر'}</span></div>
   <div class="dd">${days().map(d=>{const x=(o.att||{})[d];return`<span class="${x?'y':d<D.today?'n':''}${d===day?' cur':''}" title="${dayLbl(d)}">${wd(d).split(' ')[0]} ${dtype(d)} ${x?'✓':d<D.today?'✗':'·'}</span>`}).join('')}</div>
   <div class="ocB">${o.ph?`<div><a href="tel:${esc(o.ph)}">${esc(o.ph)}</a> · <a href="${wa(o.ph,'')}" target="_blank" rel="noopener">واتساب</a></div>`:'<div class="rl">بدون رقم</div>'}
   <div class="tags">${teamOf(o.id)?`<span class="tb"><i style="background:${teamOf(o.id).color}"></i>${esc(teamOf(o.id).n)}${teamOf(o.id).lead===o.id?' · مسؤول':''}</span>`:''}${o.shift?`<span class="sh ${o.shift}" title="${SHIFT[o.shift]}">${SHS[o.shift]}</span>`:''}${o.fu?'<span class="fu">حدّث معلوماته</span>':''}</div>${o.vote&&o.vote.how==='name'?`<div class="vw">صوّت من رقم ثاني: <bdi>${esc(o.vote.ph)}</bdi></div>`:''}${o.vote&&!o.vote.nameOk?`<div class="vw">صوّت باسم: ${esc(o.vote.n)}</div>`:''}${waLastH(o.id)}${o.uni||o.spec?`<div>${esc([o.uni,o.spec].filter(Boolean).join(' · '))}</div>`:''}${o.avt||o.avail?`<div>التواجد: ${esc([o.avt,o.avail].filter(Boolean).join(' · '))}</div>`:''}${tags.length?`<div class="tags">${tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`:''}</div>
   <div class="ocF">${o.uid?`<span class="pin" title="رمز الدخول">${esc(o.pin||'••••••')}</span><span class="rl">${esc(roleOf(o))}</span><button class="btn secondary" data-a="acc">الصلاحية</button>`:`<button class="btn primary" data-a="acc">إعطاء دخول</button>`}
-  <button class="btn secondary" data-a="edit">تعديل</button><button class="btn secondary" data-a="mark">${a?'إلغاء الحضور':'حضور يدوي'}</button></div></div>`}).join(''):'<div class="empty">ماكو منظمين بهذا البحث</div>';
+  <button class="btn secondary" data-a="edit">تعديل</button><button class="btn secondary" data-a="mark">${a?'إلغاء الحضور':'حضور يدوي'}</button></div></div>`}).join(''):emptyH());
 }
 const load=async()=>{try{D=await api('orgs/list');render()}catch(e){toast(e.message,1)}};
 setInterval(()=>{if(P.classList.contains('on')&&!M.classList.contains('on')&&!document.hidden)api('orgs/list').then(j=>{D=j;render()}).catch(()=>{})},20000);
@@ -5458,7 +5462,7 @@ $('#opQ').oninput=e=>{q=e.target.value;render()};$('#opF').onclick=e=>{const b=e
 $('#opFld').onchange=e=>{fld=e.target.value;render()};$('#opTeam').onchange=e=>{tf=e.target.value;render()};$('#opDays').onclick=e=>{const b=e.target.closest('button');if(b){day=b.dataset.d;render()}};
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(M.classList.contains('on')){closeM();e.stopPropagation()}else if(P2.classList.contains('on')){if(tSel){tSel='';tRender()}else P2.classList.remove('on');e.stopPropagation()}else if(P.classList.contains('on')){P.classList.remove('on');e.stopPropagation()}},!0);
 const byId=id=>D.orgs.find(o=>o.id===id);
-$('#opList').onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const o=byId(b.closest('.oc').dataset.id);if(!o)return;
+$('#opList').onclick=async e=>{const cl=e.target.closest('[data-clr]');if(cl){if(cl.dataset.clr==='all'){flt='all';tf='';fld='';$('#opFld').value=''}else{q='';$('#opQ').value=''}render();return}const b=e.target.closest('[data-a]');if(!b)return;const o=byId(b.closest('.oc').dataset.id);if(!o)return;
  if(b.dataset.a==='edit')edit(o);else if(b.dataset.a==='acc')access(o);
  else if(b.dataset.a==='mark'){const on=!(o.att||{})[day];if(!on&&!confirm('إلغاء حضور '+o.n+'؟'))return;try{apply(await api('orgs/mark',{id:o.id,day,on}))}catch(x){toast(x.message,1)}}};
 /* إضافة وتعديل */
