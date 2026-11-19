@@ -516,7 +516,7 @@ body:not(.queue) .qOnly{display:none !important}
   </div>
   <div class="kpis">
     <div class="kpi"><span class="lbl">VIP متاح</span><span class="val"><b id="sVip">69</b><small>من 69</small></span></div>
-    <div class="kpi"><span class="lbl">عادي متاح</span><span class="val"><b id="sReg">255</b><small>من 255</small></span></div>
+    <div class="kpi"><span class="lbl">عادي متاح</span><span class="val"><b id="sReg">254</b><small>من 254</small></span></div>
     <div class="kpi"><span class="lbl">الحضور</span><span class="val"><b id="sTot">0</b><small id="sPct"></small></span></div>
   </div>
   <div class="topActions">
@@ -555,7 +555,7 @@ body:not(.queue) .qOnly{display:none !important}
           <button data-cat="VIP" data-g="m" role="radio" aria-checked="false"><b><i class="gdot m"></i>VIP رجال</b><span id="cVipM">39 متاح</span></button>
           <button data-cat="VIP" data-g="f" role="radio" aria-checked="false"><b><i class="gdot f"></i>VIP نساء</b><span id="cVipF">30 متاح</span></button>
           <button data-cat="عادي" data-g="m" role="radio" aria-checked="false"><b><i class="gdot m"></i>عادي رجال</b><span id="cRegM">76 متاح</span></button>
-          <button data-cat="عادي" data-g="f" role="radio" aria-checked="false"><b><i class="gdot f"></i>عادي نساء</b><span id="cRegF">179 متاح</span></button>
+          <button data-cat="عادي" data-g="f" role="radio" aria-checked="false"><b><i class="gdot f"></i>عادي نساء</b><span id="cRegF">178 متاح</span></button>
         </div>
       </div>
 
@@ -700,7 +700,7 @@ body:not(.queue) .qOnly{display:none !important}
         <h4>ستكرات الكراسي</h4>
         <p class="help">ستكر كبير ينلزك على كل كرسي حتى الضيف يلكه بسهولة: رقم الصف ورقم الكرسي ومكانه.</p>
         <label>شنو تطبع
-          <select id="chairSec"><option value="all">كل القاعة (324 كرسي)</option></select></label>
+          <select id="chairSec"><option value="all">كل القاعة (323 كرسي)</option></select></label>
         <div class="grid2">
           <button class="btn secondary" id="chairTest">ستكر كرسي تجريبي</button>
           <button class="btn primary" id="chairBatch">اطبع الستكرات</button>
@@ -829,8 +829,8 @@ body:not(.queue) .qOnly{display:none !important}
 <script>
 /* تقسيم الكراسي حسب الجنس: القسم B كله رجال، والصف الأول من القسم A رجال (VIP)، وباقي A والقسم C كله نساء */
 window.__vg=null;
-/* كراسي غير موجودة: A10 بالصف 11، و B10 بالصفوف الزوجية */
-window.__seatOk=function(r,c){return !((r===11&&c===10)||(c===20&&r%2===0))};
+/* كراسي غير موجودة: A10 و C1 بالصف 11، و B10 بالصفوف الزوجية */
+window.__seatOk=function(r,c){return !((r===11&&(c===10||c===21))||(c===20&&r%2===0))};
 /* صفوف VIP: القسم B أول 3 صفوف، والقسمين A و C أول صفين */
 window.__vipRC=function(r,c){return r<=((c>10&&c<21)?3:2)};
 window.__vipId=function(id){var p=String(id).slice(1).split('-');return __vipRC(+p[0],+p[1])};
@@ -5723,7 +5723,7 @@ function siteBase(g,onBld){
 }
 /* مخطط القاعة: المسرح، الأقسام A و B و C، وخارج القاعة (الممر) */
 function hallBase(g,onDoor){
- const zg=(r,c)=>(c>=11&&c<=20)||(c<=10&&r===1),vip=(r,c)=>r<=((c>=11&&c<=20)?3:2),ok=(r,c)=>!((r===11&&c===10)||(c===20&&r%2===0));
+ const zg=(r,c)=>(c>=11&&c<=20)||(c<=10&&r===1),vip=(r,c)=>r<=((c>=11&&c<=20)?3:2),ok=(r,c)=>!((r===11&&(c===10||c===21))||(c===20&&r%2===0));
  sel_('rect',{x:30,y:590,width:940,height:122,rx:18,fill:'url(#tpHatch)'},g);
  stx(g,952,610,'خارج القاعة · الممر',{'font-size':12.5,fill:'#a8a29e','font-weight':700,'text-anchor':'start'});
  sel_('rect',{x:40,y:18,width:920,height:552,rx:22,fill:'#fbf9f7'},g);

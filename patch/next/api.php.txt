@@ -104,7 +104,7 @@ function seat_rc(string $sid): ?array {
 }
 /* تقسيم حسب الجنس: القسم B (كراسي 11-20) كله رجال، والصف الأول من القسم A رجال، وباقي A والقسم C كله نساء */
 /* كراسي غير موجودة: A10 بالصف 11، و B10 بالصفوف الزوجية (القسم B يتناوب 10 و 9) */
-function seat_ok(int $r, int $c): bool { return !(($r === 11 && $c === 10) || ($c === 20 && $r % 2 === 0)); }
+function seat_ok(int $r, int $c): bool { return !(($r === 11 && ($c === 10 || $c === 21)) || ($c === 20 && $r % 2 === 0)); }
 function zone_g(int $r, int $c): string { return (($c >= 11 && $c <= 20) || ($c <= 10 && $r === 1)) ? 'm' : 'f'; }
 function g_lbl(string $g): string { return $g === 'm' ? 'للرجال' : 'للنساء'; }
 /* صفوف VIP: القسم B (كراسي 11-20) أول 3 صفوف، والقسمين A و C أول صفين */
