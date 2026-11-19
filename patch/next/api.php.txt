@@ -104,6 +104,12 @@ function lbl_of(int $r, int $c): string {
     for ($x = $k * 10 + 1; $x <= $c; $x++) if (seat_ok($r, $x)) $q++;
     return 'ABC'[$k] . $q;
 }
+/* الفئة: VVIP الصف الأول بكل الأقسام + الصف الثاني بالقسم B، VIP صفوف الـ VIP أو كرسي محجوز VIP، والباقي عادي */
+function tier_of(int $r, int $c, array $d = []): string {
+    if ($r === 1 || ($r === 2 && $c > 10 && $c < 21)) return 'VVIP';
+    if ($r <= (($c > 10 && $c < 21) ? 3 : 2) || ($d['c'] ?? '') === 'VIP') return 'VIP';
+    return 'عادي';
+}
 function seat_rc(string $sid): ?array {
     if (!preg_match('/^R(\d{1,2})-(\d{1,2})$/', $sid, $m)) return null;
     $r = (int)$m[1]; $c = (int)$m[2];
@@ -326,10 +332,10 @@ if ($method === 'GET') {
         header('Content-Disposition: attachment; filename=attendance.csv');
         $o = fopen('php://output', 'w');
         fwrite($o, "\xEF\xBB\xBF");
-        fputcsv($o, ['الاسم', 'الصف', 'الكرسي', 'وقت الوصول', 'سجّله']);
-        foreach ($rows as [$rr, $cc, $d]) fputcsv($o, [$d['n'], sec_of($rr), lbl_of($rr, $cc), date('H:i', (int)($d['t'] / 1000)), $d['by'] ?? '']);
+        fputcsv($o, ['الاسم', 'الفئة', 'الصف', 'الكرسي', 'وقت الوصول', 'سجّله']);
+        foreach ($rows as [$rr, $cc, $d]) fputcsv($o, [$d['n'], tier_of($rr, $cc, $d), sec_of($rr), lbl_of($rr, $cc), date('H:i', (int)($d['t'] / 1000)), $d['by'] ?? '']);
         $wait = array_filter($S['guests'], fn($g) => empty($g['s']));
-        if ($wait) { fputcsv($o, []); fputcsv($o, ['ضيوف بالقائمة ما وصلوا']); foreach ($wait as $g) fputcsv($o, [$g['n']]); }
+        if ($wait) { fputcsv($o, []); fputcsv($o, ['ضيوف بالقائمة ما وصلوا', 'الفئة']); foreach ($wait as $g) fputcsv($o, [$g['n'], ($g['c'] ?? '') === 'VIP' ? 'VIP' : 'عادي']); }
         exit;
     }
     out(404, ['error' => 'nf']);
