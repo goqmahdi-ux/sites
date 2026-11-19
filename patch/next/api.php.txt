@@ -332,10 +332,27 @@ if ($method === 'GET') {
         header('Content-Disposition: attachment; filename=attendance.csv');
         $o = fopen('php://output', 'w');
         fwrite($o, "\xEF\xBB\xBF");
-        fputcsv($o, ['الاسم', 'الفئة', 'الصف', 'الكرسي', 'وقت الوصول', 'سجّله']);
-        foreach ($rows as [$rr, $cc, $d]) fputcsv($o, [$d['n'], tier_of($rr, $cc, $d), sec_of($rr), lbl_of($rr, $cc), date('H:i', (int)($d['t'] / 1000)), $d['by'] ?? '']);
-        $wait = array_filter($S['guests'], fn($g) => empty($g['s']));
-        if ($wait) { fputcsv($o, []); fputcsv($o, ['ضيوف بالقائمة ما وصلوا', 'الفئة']); foreach ($wait as $g) fputcsv($o, [$g['n'], ($g['c'] ?? '') === 'VIP' ? 'VIP' : 'عادي']); }
+        // ملخص فوك: نفس أرقام كشف الـ PDF
+        $tot = 0; $vz = 0;
+        for ($r = 1; $r <= ROWS; $r++) for ($c = 1; $c <= COLS; $c++) if (seat_ok($r, $c)) { $tot++; if ($r <= (($c > 10 && $c < 21) ? 3 : 2)) $vz++; }
+        $inV = 0; $nVV = 0; $nV = 0;
+        foreach ($rows as [$rr, $cc, $d]) { if ($rr <= (($cc > 10 && $cc < 21) ? 3 : 2)) $inV++; $t = tier_of($rr, $cc, $d); if ($t === 'VVIP') $nVV++; elseif ($t === 'VIP') $nV++; }
+        $inR = count($rows) - $inV;
+        $regReg = count(array_filter($S['guests'], fn($g) => ($g['c'] ?? '') !== 'VIP'));
+        $byName = ['mahdi_q5' => 'مهدي قاسم'];
+        fputcsv($o, ['كشف الحضور', $S['settings']['title'] ?? '']);
+        fputcsv($o, ['عدد كراسي القاعة', $tot]);
+        fputcsv($o, ['كراسي VIP فارغة', ($vz - $inV) . ' من ' . $vz]);
+        fputcsv($o, ['كراسي عادي فارغة', ($tot - $vz - $inR) . ' من ' . ($tot - $vz)]);
+        fputcsv($o, ['الحاضرين بكراسيهم', count($rows)]);
+        fputcsv($o, ['VVIP', $nVV]);
+        fputcsv($o, ['VIP', $nV]);
+        fputcsv($o, ['مسجلين عادي', $regReg]);
+        fputcsv($o, []);
+        fputcsv($o, ['الحاضرين مرتبين حسب الكفاءة العلمية']);
+        fputcsv($o, ['ت', 'الاسم', 'الفئة', 'الصف', 'الكرسي', 'المسجّل']);
+        $i = 0;
+        foreach ($rows as [$rr, $cc, $d]) { $i++; $by = (string)($d['by'] ?? ''); fputcsv($o, [$i, $d['n'], tier_of($rr, $cc, $d), sec_of($rr), lbl_of($rr, $cc), $byName[$by] ?? $by]); }
         exit;
     }
     out(404, ['error' => 'nf']);
