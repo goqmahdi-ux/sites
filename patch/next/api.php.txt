@@ -98,7 +98,12 @@ function obj(array $a) { return $a ? $a : new stdClass(); }
 function now_ms(): int { return (int)round(microtime(true) * 1000); }
 function rid(int $n = 5): string { return bin2hex(random_bytes($n)); }
 function sec_of(int $r): string { return 'صف ' . $r; }
-function lbl_of(int $r, int $c): string { return 'ABC'[intdiv($c - 1, 10)] . (($c - 1) % 10 + 1); }
+function lbl_of(int $r, int $c): string {
+    // كل قسم يترقم من 1 على الكراسي الموجودة بس (القسم C بالصف 11 يصير C1 لحد C9)
+    $k = intdiv($c - 1, 10); $q = 0;
+    for ($x = $k * 10 + 1; $x <= $c; $x++) if (seat_ok($r, $x)) $q++;
+    return 'ABC'[$k] . $q;
+}
 function seat_rc(string $sid): ?array {
     if (!preg_match('/^R(\d{1,2})-(\d{1,2})$/', $sid, $m)) return null;
     $r = (int)$m[1]; $c = (int)$m[2];
