@@ -5387,6 +5387,7 @@ const st=document.createElement('style');st.textContent=`
 #orgM .waH{display:flex;flex-direction:column;gap:6px}#orgM .waH button{font:inherit;text-align:start;border:1.5px solid #e4ddd8;background:#fff;border-radius:12px;padding:9px 12px;cursor:pointer;color:#3a2a31}#orgM .waH button b{display:block;font-size:13.5px}#orgM .waH button small{display:block;color:#8a7f78;font-size:12px;margin-top:2px}#orgM .waH button.on{border-color:#16a34a;background:#f0fbf4}
 #orgP .wl{font-size:12px;color:#15803d;background:#f0fbf4;border-radius:8px;padding:3px 8px;display:inline-block}
 #orgP .qbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7e6;border:1px solid #f5d9a8;color:#7a4b00;border-radius:12px;padding:8px 12px;font-size:13.5px;font-weight:600}#orgP .qbar button{margin-inline-start:auto;font:inherit;font-size:13px;font-weight:700;border:0;background:#7a4b00;color:#fff;border-radius:9px;padding:6px 12px;cursor:pointer}
+#orgM #oAvB{flex-wrap:wrap}#orgM #oAvB button{min-width:120px}
 #orgM .sw{display:flex;gap:8px;flex-wrap:wrap}#orgM .sw button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);cursor:pointer}#orgM .sw button.on{box-shadow:0 0 0 3px #1a1216}
 #orgM .ml{max-height:240px;overflow:auto;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:4px 8px;margin-top:6px}#orgM .ml label{display:flex;align-items:center;gap:8px;margin:0;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:13.5px}#orgM .ml label small{margin-inline-start:auto;color:#8a7f78}
 #orgP .empty{grid-column:1/-1;text-align:center;color:#8a7f78;padding:40px}
@@ -5475,11 +5476,13 @@ function edit(o){const n=!o;o=o||{g:'f'};let g=o.g==='m'?'m':'f',sh=o.shift||'';
  <label>وقت الحضور<div class="seg2" id="oSh"><button type="button" data-s="a">12 ظهراً – 6 مساءً</button><button type="button" data-s="b">4 مساءً – 10 ليلاً</button><button type="button" data-s="">ما محدد</button></div></label>
  <label>مجال المساهمة<div class="tg" id="oFld">${FIELDS.map(f=>`<button type="button" class="${sel.has(f)?'on':''}">${f}</button>`).join('')}</div></label>
  <label>وقت التواجد<input class="inp" id="oAvt" maxlength="80" value="${esc(o.avt||'')}" placeholder="طول اليوم، أو من 2 ظهراً إلى 8 مساءً"></label>
- <div class="g2"><label>أيام التفرغ<input class="inp" id="oAv" maxlength="60" value="${esc(o.avail||'')}"></label><label>حساب التواصل<input class="inp" id="oSoc" maxlength="160" dir="ltr" value="${esc(o.soc||'')}"></label></div>
+ <label>أيام التواجد<input type="hidden" id="oAv" value="${esc(o.avail||'')}"><div class="seg2" id="oAvB">${(()=>{const A=[['اليومين','اليومين'],['الجمعة 20 فقط','الجمعة 20 فقط'],['السبت 21 فقط','السبت 21 فقط'],['','ما محدد']],cur=String(o.avail||'');if(cur&&!A.some(x=>x[0]===cur))A.unshift([cur,cur]);return A.map(([v_,l])=>`<button type="button" data-v="${esc(v_)}" class="${v_===cur?'on':''}">${esc(l)}</button>`).join('')})()}</div></label>
+ <label>حساب التواصل<input class="inp" id="oSoc" maxlength="160" dir="ltr" value="${esc(o.soc||'')}"></label>
  <label>خبرة سابقة أو ملاحظات<input class="inp" id="oExp" maxlength="400" value="${esc(o.exp||'')}"></label>
  <div class="err" id="oErr"></div><div class="row"><button class="btn primary" id="oSave">حفظ</button><button class="btn secondary" id="oCancel">إلغاء</button>${n?'':'<button class="btn danger" id="oDel">حذف المنظم</button>'}</div>`);
  const sg=()=>{mc.querySelectorAll('#oG button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));mc.querySelectorAll('#oSh button').forEach(b=>b.classList.toggle('on',b.dataset.s===sh))};sg();
  mc.querySelector('#oSh').onclick=e=>{const b=e.target.closest('button');if(b){sh=b.dataset.s;sg()}};
+ mc.querySelector('#oAvB').onclick=e=>{const b=e.target.closest('button');if(!b)return;mc.querySelector('#oAv').value=b.dataset.v;mc.querySelectorAll('#oAvB button').forEach(x=>x.classList.toggle('on',x===b))};
  mc.querySelector('#oG').onclick=e=>{const b=e.target.closest('button');if(b){g=b.dataset.g;sg()}};
  mc.querySelector('#oFld').onclick=e=>{const b=e.target.closest('button');if(b){b.classList.toggle('on');b.classList.contains('on')?sel.add(b.textContent):sel.delete(b.textContent)}};
  mc.querySelector('#oCancel').onclick=closeM;
