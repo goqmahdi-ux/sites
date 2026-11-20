@@ -183,13 +183,14 @@ function target_admin(array $S, array $me): ?string {
     if ($pa) return $pa[0];
     return $supOk ? $sup : (admins($S)[0] ?? null);
 }
-function add_name_job(array &$S, array $me, string $n, string $j, bool $num = false): array {
+function add_name_job(array &$S, array $me, string $n, string $j, bool $num = false, bool $ch = false): array {
     $to = target_admin($S, $me);
     $S['jobSeq']++;
-    $x = ['id' => $S['jobSeq'], 'n' => $n, 'j' => $j, 'w' => 50, 'h' => 30, 'sec' => 'ستكر', 'lbl' => 'اسم', 'r' => 0, 'seat' => '',
+    $x = ['id' => $S['jobSeq'], 'n' => $n, 'j' => $j, 'w' => max(20, min(120, (int)($S['settings']['stickerW'] ?? 50))), 'h' => max(15, min(120, (int)($S['settings']['stickerH'] ?? 30))), 'sec' => 'ستكر', 'lbl' => 'اسم', 'r' => 0, 'seat' => '',
         't' => now_ms(), 'by' => $me['uid'], 'byName' => $me['name'], 'to' => $to,
         'toName' => $to ? $S['users'][$to]['name'] : '', 'st' => 'new', 'kind' => 'name', 'claimed' => 'queue'];
     if ($num) { $x['num'] = 1; $x['lbl'] = 'رقم'; }
+    if ($ch) $x['ch'] = 1;
     $S['jobs'][] = $x;
     if (count($S['jobs']) > 600) $S['jobs'] = array_slice($S['jobs'], -600);
     return $x;
@@ -1042,7 +1043,7 @@ switch ($r) {
         $on = !array_key_exists('on', $b) || !empty($b['on']);
         $jobs = is_array($b['jobs'] ?? null) ? $b['jobs'] : [];
         $Q = !empty($b['queue']) && $on; $qn = 0;
-        $jq = function ($n, $j) use (&$S, $me, &$qn) { $j = trim((string)$j); add_name_job($S, $me, (string)$n, $j !== '' ? $j : 'منظم'); $qn++; };
+        $jq = function ($n, $j, $ch = false) use (&$S, $me, &$qn) { $j = trim((string)$j); add_name_job($S, $me, (string)$n, $ch ? '' : ($j !== '' ? $j : 'منظم'), false, $ch); $qn++; };
         if ($Q && !empty($b['nums']) && is_array($b['nums'])) {
             foreach (array_slice($b['nums'], 0, 500) as $x) { $x = mb_substr(trim((string)$x), 0, 12); if ($x === '') continue; add_name_job($S, $me, $x, '', true); $qn++; }
             save($S); out(200, array_merge(['ok' => true, 'queued' => $qn], org_res_for($S, $me)));
@@ -1059,11 +1060,12 @@ switch ($r) {
             if (!is_array($m)) continue;
             $n = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($m['n'] ?? ''))), 0, 80);
             if ($n === '') continue;
-            $S['npx'][] = ['id' => 'm' . rid(4), 'n' => $n, 'j' => mb_substr(trim((string)($m['j'] ?? '')), 0, 60), 't' => now_ms(), 'by' => $me['name'], 'c' => 1];
-            if ($Q) $jq($n, mb_substr(trim((string)($m['j'] ?? '')), 0, 60));
+            $ch = !empty($m['ch']);
+            $S['npx'][] = ['id' => 'm' . rid(4), 'n' => $n, 'j' => $ch ? '' : mb_substr(trim((string)($m['j'] ?? '')), 0, 60), 't' => now_ms(), 'by' => $me['name'], 'c' => 1] + ($ch ? ['ch' => 1] : []);
+            if ($Q) $jq($n, mb_substr(trim((string)($m['j'] ?? '')), 0, 60), $ch);
         }
         $mids = array_map('strval', (array)($b['mids'] ?? []));
-        if ($mids) foreach ($S['npx'] as $i => $x) if (in_array((string)($x['id'] ?? ''), $mids, true)) { $S['npx'][$i]['t'] = now_ms(); $S['npx'][$i]['by'] = $me['name']; $S['npx'][$i]['c'] = (int)($x['c'] ?? 1) + 1; if ($Q) $jq($x['n'] ?? '', $x['j'] ?? ''); }
+        if ($mids) foreach ($S['npx'] as $i => $x) if (in_array((string)($x['id'] ?? ''), $mids, true)) { $S['npx'][$i]['t'] = now_ms(); $S['npx'][$i]['by'] = $me['name']; $S['npx'][$i]['c'] = (int)($x['c'] ?? 1) + 1; if ($Q) $jq($x['n'] ?? '', $x['j'] ?? '', !empty($x['ch'])); }
         if (count($S['npx']) > 3000) $S['npx'] = array_slice($S['npx'], -3000);
         $S['users'][$me['uid']]['seen'] = time();
         save($S);
