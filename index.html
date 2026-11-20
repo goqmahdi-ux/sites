@@ -233,6 +233,7 @@ kbd{font:600 12px Inter;border:1px solid var(--line);border-bottom-width:2px;bor
 .earr{display:flex;flex-direction:column;gap:4px}.earr button{width:34px;height:26px;border-radius:8px;border:0;background:#fff;color:#3b2a8a;cursor:pointer}.earr button:disabled{opacity:.35;cursor:default}
 #lobby.editing .finder{opacity:.4;pointer-events:none}
 @media(max-width:760px){.erow{grid-template-columns:70px 1fr}.ectl{grid-column:1/-1}}
+.chairs{display:flex;flex-direction:column;gap:2px}.chairs b{opacity:1;font-weight:700}
 </style>
 
 </head>
@@ -350,8 +351,8 @@ const SESS=[
  {k:'h1',sh:'Session 1',hall:2,name:'Session 1 · Reproductive Health',time:'10:30 – 11:30',chairs:'Dr Intisar Jawad Al-Rammahi · Dr Manal Nasih Al-Tamimi · Dr Raghad Numan Talib Ali · Dr Alaa Omran Musa'},
  {k:'h2',sh:'Session 2',hall:2,name:'Session 2 · Internal Medicine and Critical Care',time:'11:30 – 12:30',chairs:'Dr Ahmed Al-Mayali · Dr Riyadh Mustafa Al-Shehristani · Dr Riyadh Muhyi Abboud Al-Saigh'},
  {k:'h3',sh:'Session 3',hall:2,name:'Session 3 · Clinical Practice and Healthcare Governance',time:'13:00 – 14:00',chairs:'Dr Hassan Ali Abood Nasrallah · Dr Kareem Abies Aliwi Al-Nafie · Dr Haidar Hussein Sallum'},
- {k:'o1',sh:'Part 1',hall:3,name:'Part 1 · Breast Cancer: From Diagnosis to Treatment',time:'10:30 – 11:30',chairs:'Dr Aqeel Shakir Mahmood · Dr Mohammed Fawzi Al-Qanbar · Dr Enam Aziz Khalil Al-Tamimi'},
- {k:'o2',sh:'Part 2',hall:3,name:'Part 2 · Multidisciplinary Case Discussion Panel & Short Talks',time:'11:30 – 13:00',chairs:'Moderator: Dr Sabah Kareem Al-Husseini'},
+ {k:'o1',sh:'Session 1',hall:3,name:'Session 1 · Breast Cancer: From Diagnosis to Treatment',time:'11:30 – 12:30',chairs:'Dr Aqeel Shakir Mahmood · Dr Mohammed Fawzi Al-Qanbar · Dr Enam Aziz Khalil Al-Tamimi'},
+ {k:'o2',sh:'Session 2',hall:3,name:'Session 2 · Multidisciplinary Case Discussion Panel + Short Talks',time:'11:30 – 13:00',chairs:'Moderator: Dr Sabah Kareem Al-Husseini'},
  {k:'x',sh:'إضافية',hall:2,name:'محاضرات إضافية (مو بالكتيب)',time:'',chairs:''}
 ];
 const R=[
@@ -383,10 +384,10 @@ const R=[
  {id:'haiderfs',s:'h3',time:'13:00 – 14:00',who:'Dr Haider Fadel Salman Alkazraji',ar:'د. حيدر فاضل سلمان الخزرجي',al:['حيدر فاضل','الخزرجي'],t:'Starving the Tumour: Endovascular Embolisation for an Unresectable Sacroiliac Giant Cell Tumour',sp:'Interventional Radiologist'},
  {id:'bouchra',s:'h3',time:'13:00 – 14:00',who:'Dr Bouchra Bou Abbass',ar:'د. بشرى بو عباس',al:['بشرى','بشرا'],t:'Saving Lives, Saving Costs: Patient Safety as a Strategic Investment in Healthcare Governance',sp:'CPHQ, PMP — CEO and Co-Founder, STC Middle East'},
  {id:'osamah',s:'h3',time:'13:00 – 14:00',who:'Dr Osamah Abdul Hasan',ar:'د. أسامة عبد الحسن',al:['اسامه','اسامة'],t:'Treatment of Osteomyelitis in Open Femoral Fracture by Membrane Technique with Fibular Graft and Ilizarov Fixation',sp:'Consultant Orthopaedic and Trauma Surgeon'},
- {id:'ar1',s:'o1',time:'10:30 – 11:30',who:'Dr Tara Farooq Kareem',ar:'أ.م.د. تارا فاروق كريم',al:['تارا','تاره'],t:'Preoperative Wire Localization and Clip Insertion in Breast Lesions',sp:'Consultant Radiologist, College of Medicine, University of Baghdad'},
- {id:'ameer',s:'o1',time:'10:30 – 11:30',who:'Dr Ameer Dh. Hameedi',ar:'أ.م.د. أمير ظاهر حميدي',al:['امير'],t:'Histopathological Pitfalls and Diagnostic Challenges in Breast Cancer',sp:'Department of Pathology and Forensic Medicine'},
- {id:'noufel',s:'o1',time:'10:30 – 11:30',who:'Dr Noufel Alshadood',ar:'أ.م.د. نوفل شاكر الشدود',al:['نوفل','الشدود'],t:'Sentinel Lymph Node in Breast Cancer: From Staging to De-escalation',sp:'Surgical Oncologist, Baghdad Teaching Hospital; Warith International Cancer Institute'},
- {id:'munawar',s:'o1',time:'10:30 – 11:30',who:'Dr Munawar Al-Naqqash',ar:'أ.د. منور النقاش',al:['منور','النقاش'],t:'The Role of Neoadjuvant Treatment in Breast Cancer Management',sp:'Clinical Oncologist (Oncology and Radiotherapy)'},
+ {id:'ar1',s:'o1',time:'11:30 – 12:30',who:'Dr Tara Farooq Kareem',ar:'أ.م.د. تارا فاروق كريم',al:['تارا','تاره'],t:'Preoperative Wire Localization and Clip Insertion in Breast Lesions',sp:'Consultant Radiologist, College of Medicine, University of Baghdad'},
+ {id:'ameer',s:'o1',time:'11:30 – 12:30',who:'Dr Ameer Dh. Hameedi',ar:'أ.م.د. أمير ظاهر حميدي',al:['امير'],t:'Histopathological Pitfalls and Diagnostic Challenges in Breast Cancer',sp:'Department of Pathology and Forensic Medicine'},
+ {id:'noufel',s:'o1',time:'11:30 – 12:30',who:'Dr Noufel Alshadood',ar:'أ.م.د. نوفل شاكر الشدود',al:['نوفل','الشدود'],t:'Sentinel Lymph Node in Breast Cancer: From Staging to De-escalation',sp:'Surgical Oncologist, Baghdad Teaching Hospital; Warith International Cancer Institute'},
+ {id:'munawar',s:'o1',time:'11:30 – 12:30',who:'Dr Munawar Al-Naqqash',ar:'أ.د. منور النقاش',al:['منور','النقاش'],t:'The Role of Neoadjuvant Treatment in Breast Cancer Management',sp:'Clinical Oncologist (Oncology and Radiotherapy)'},
  {id:'sabah',s:'o2',time:'11:30 – 12:30',who:'Dr Sabah Kareem Al-Husseini',ar:'أ.م.د. صباح كريم الحسيني',al:['صباح'],t:'Surgical Management (Panel)',sp:'Director of Imam Al-Hussein Medical City'},
  {id:'karrar',s:'o2',time:'11:30 – 12:30',who:'Dr Karrar Al-Mosawy',ar:'د. كرار الموسوي',al:['كرار'],t:'New Contralateral Breast Lesion After Breast-Conserving Surgery: Clinical History · Parathyroid Carcinoma in an Adolescent Female (12:45)',sp:'Consultant Oncologist, Head of Al-Hussain Oncology Center'},
  {id:'athil',s:'o2',time:'11:30 – 12:30',who:'Dr Atheel Saad Salih Al-Nasrawi',ar:'د. أثيل سعد النصراوي',al:['اثيل','النصراوي','athil'],t:'Clinical Applications of Mammotome in Interventional Breast Imaging',sp:'Radiologist, subspecialist in breast imaging and intervention'},
@@ -436,6 +437,7 @@ function card(t,i){return `<button class="res ${t.done?'done':''}" data-id="${es
 let HALL=+store.get('isc-hall',1)||1,EDIT=false,pinFor='';
 const sessOf=t=>SESS.find(s=>s.k===t.s)||SESS.find(s=>s.k==='x');
 const hallAr=n=>(HALLS.find(h=>h.n===n)||{}).ar||'';
+function chairsHtml(c){if(!c)return'';if(/^Moderator/.test(c))return `<div class="chairs lat"><b>${esc(c)}</b></div>`;const p=c.split(' · ');return `<div class="chairs lat"><span><b>Chair:</b> ${esc(p[0])}</span>${p.length>1?`<span><b>Co-Chair:</b> ${esc(p.slice(1).join(' · '))}</span>`:''}</div>`}
 function renderHalls(){$('halls').innerHTML=HALLS.map(h=>`<button class="hall ${h.n===HALL?'on':''}" data-h="${h.n}"><b>${esc(h.ar)}</b><small class="lat">${esc(h.en.split(' – ')[0])}</small></button>`).join('')}
 document.addEventListener('click',e=>{const b=e.target.closest('.hall');if(!b)return;HALL=+b.dataset.h;store.set('isc-hall',HALL);renderLobby()});
 function erow(t,i,arr){return `<div class="erow" data-id="${esc(t.id)}"><div class="th" style="background-image:url('${thumb(t)}')"></div>
@@ -448,7 +450,7 @@ function renderLobby(){
   if(EDIT||toks(q).join('').length<2){$('results').innerHTML='';renderHalls();$('halls').classList.remove('hide');
     const hl=HALLS.find(h=>h.n===HALL);
     $('nextup').innerHTML=(EDIT?'<div class="ehint">وضع التعديل: غيّر الجلسة من القائمة، أو حرّك البحث بالأسهم. التغيير ينحفظ فوراً.</div>':'')+`<div class="hallen lat">${esc(hl.en)}</div>`+SESS.filter(s=>s.hall===HALL).map(s=>{const ts=list.filter(t=>sessOf(t).k===s.k);if(!ts.length)return'';
-      return `<div class="sess"><div class="sh"><h3 class="lat">${esc(s.name)}</h3>${s.time?`<span class="stime">${esc(s.time)}</span>`:''}</div>${s.chairs?`<div class="chairs lat">Chairs: ${esc(s.chairs)}</div>`:''}${ts.map(EDIT?erow:card).join('')}</div>`}).join('');return}
+      return `<div class="sess"><div class="sh"><h3 class="lat">${esc(s.name)}</h3>${s.time?`<span class="stime">${esc(s.time)}</span>`:''}</div>${chairsHtml(s.chairs)}${ts.map(EDIT?erow:card).join('')}</div>`}).join('');return}
   $('halls').classList.add('hide');$('nextup').innerHTML='';
   const q0=toks(q)[0]||'';const rank=t=>{const f=toks(t.ar)[0]||'',e=toks(t.who)[0]||'';return (f.startsWith(q0)||e.startsWith(q0))?0:1};
   const m=list.filter(t=>matches(t,q)).sort((a,b)=>rank(a)-rank(b));
