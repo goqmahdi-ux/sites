@@ -14,7 +14,7 @@ header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 
 const ROWS = 11, COLS = 30, VIP_ROWS = 2; // 330 كرسي: 3 أقسام × 10 كراسي، 11 صف
-const PERMS = ['checkin', 'print', 'reprint', 'move', 'free', 'guests', 'export'];
+const PERMS = ['checkin', 'print', 'reprint', 'move', 'free', 'guests', 'export', 'orgs'];
 const DEFAULT_PERMS = ['checkin', 'print', 'reprint'];
 
 /* ---------------- storage ---------------- */
@@ -737,7 +737,7 @@ switch ($r) {
         done($S, $me);
     }
     case 'orgs/list': {
-        if (!$admin) deny();
+        if (!$admin && !can($me, 'orgs')) deny();
         out(200, array_merge(['ok' => true], org_res($S)));
     }
     case 'backup': {
@@ -899,7 +899,7 @@ switch ($r) {
         odone($S, $me);
     }
     case 'orgs/mark': {
-        if (!$admin) deny();
+        if (!$admin && !can($me, 'orgs')) deny();
         $id = (string)($b['id'] ?? '');
         if (!isset($S['orgs'][$id])) out(404, ['error' => 'nf', 'msg' => 'المنظم غير موجود']);
         $day = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($b['day'] ?? '')) ? (string)$b['day'] : date('Y-m-d');
