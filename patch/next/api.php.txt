@@ -53,6 +53,10 @@ function load(): array {
     $s['settings'] = $set;
     foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform', 'votes', 'teams', 'wa', 'npx', 'att', 'arate'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
     if (!is_array($s['settings']['zone'] ?? null)) $s['settings']['zone'] = $b['settings']['zone'];
+    // اليوم الحالي (1 أو 2). بيانات اليوم الثاني بحدها، والمنظمين مشتركين
+    $s['day'] = in_array((int)($s['day'] ?? 1), [1, 2], true) ? (int)($s['day'] ?? 1) : 1;
+    if (!is_array($s['days'] ?? null)) $s['days'] = [];
+    $GLOBALS['VIPOFF'] = !empty($s['settings']['vipOff']);
     // قياس الستكر صار 30×25 ملم (مرة وحدة، بعدها يكدر الأدمن يغيره من الإعدادات)
     if ((int)($s['settings']['szv'] ?? 0) < 2) { $s['settings']['stickerW'] = 30; $s['settings']['stickerH'] = 25; $s['settings']['szv'] = 2; }
     // كراسي ما موجودة بترتيب القاعة الحالي تنشال، وضيوفها يرجعون للقائمة
@@ -106,6 +110,7 @@ function lbl_of(int $r, int $c): string {
 }
 /* الفئة: VVIP الصف الأول بكل الأقسام + الصف الثاني بالقسم B، VIP صفوف الـ VIP أو كرسي محجوز VIP، والباقي عادي */
 function tier_of(int $r, int $c, array $d = []): string {
+    if (!empty($GLOBALS['VIPOFF'])) return 'عادي';
     if ($r === 1 || ($r === 2 && $c > 10 && $c < 21)) return 'VVIP';
     if ($r <= (($c > 10 && $c < 21) ? 3 : 2) || ($d['c'] ?? '') === 'VIP') return 'VIP';
     return 'عادي';
@@ -121,7 +126,7 @@ function seat_ok(int $r, int $c): bool { return !(($r === 11 && ($c === 10 || $c
 function zone_g(int $r, int $c): string { return (($c >= 11 && $c <= 20) || ($c <= 10 && $r === 1)) ? 'm' : 'f'; }
 function g_lbl(string $g): string { return $g === 'm' ? 'للرجال' : 'للنساء'; }
 /* صفوف VIP: القسم B (كراسي 11-20) أول 3 صفوف، والقسمين A و C أول صفين */
-function is_vip(int $r, int $c): bool { return $r <= (($c >= 11 && $c <= 20) ? 3 : 2); }
+function is_vip(int $r, int $c): bool { return empty($GLOBALS['VIPOFF']) && $r <= (($c >= 11 && $c <= 20) ? 3 : 2); }
 function cat_of_seat(string $sid): string { [$r, $c] = seat_rc($sid); return is_vip($r, $c) ? 'VIP' : 'عادي'; }
 function hash_pin(string $pin, string $salt): string { return hash('sha256', $salt . ':' . $pin); }
 function valid_pin($pin): bool { return is_string($pin) && preg_match('/^\d{4,8}$/', $pin) === 1; }
@@ -216,7 +221,7 @@ function public_state(array $S, array $me): array {
     foreach ($S['jobs'] as $j) if (($j['st'] ?? '') === 'new' && ($j['to'] ?? '') === $me['uid']) $pend++;
     $set = $S['settings'];
     $set['printModeEff'] = 'queue';
-    $st = ['version' => $S['version'], 'seats' => obj($S['seats']), 'guests' => obj($S['guests']), 'settings' => $set,
+    $st = ['version' => $S['version'], 'day' => (int)($S['day'] ?? 1), 'days' => array_map('strval', array_keys($S['days'] ?? [])), 'seats' => obj($S['seats']), 'guests' => obj($S['guests']), 'settings' => $set,
         'stations' => 0, 'pending' => $pend, 'caps' => ['team', 'queue'],
         'me' => ['name' => $me['name'], 'role' => $me['role'], 'id' => $me['uid'], 'perms' => $me['perms'],
             'task' => $me['task'], 'sup' => $me['sup'], 'supName' => ($me['sup'] && isset($S['users'][$me['sup']])) ? $S['users'][$me['sup']]['name'] : '']];
@@ -369,6 +374,12 @@ if ($method === 'GET') {
     if ($r === 'export.csv') {
         $S = load(); $me = auth($S, token());
         if (!$me || !can($me, 'export')) out(403, ['error' => 'perm']);
+        $xd = (int)($_GET['day'] ?? 0);
+        if ($xd && $xd !== (int)$S['day'] && is_array($S['days'][(string)$xd] ?? null)) {
+            $A = $S['days'][(string)$xd];
+            $S['seats'] = (array)($A['seats'] ?? []); $S['guests'] = (array)($A['guests'] ?? []);
+            $GLOBALS['VIPOFF'] = !empty($A['vipOff']);
+        }
         $rows = [];
         foreach ($S['seats'] as $sid => $d) { [$rr, $cc] = seat_rc($sid); $rows[] = [$rr, $cc, $d]; }
         usort($rows, fn($a, $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
@@ -637,6 +648,7 @@ switch ($r) {
         $gid = (string)($b['guestId'] ?? '');
         $move = !empty($b['move']);
         if ($name === '') out(400, ['error' => 'name', 'msg' => 'اكتب اسم الضيف']);
+        if (!empty($GLOBALS['VIPOFF'])) $cat = 'عادي';
         if (!in_array($cat, ['VIP', 'عادي'], true)) out(400, ['error' => 'cat', 'msg' => 'اختار الفئة']);
         $g = ($gid !== '' && isset($S['guests'][$gid])) ? $S['guests'][$gid] : null;
         if ($g && !empty($g['s']) && isset($S['seats'][$g['s']])) {
@@ -699,6 +711,15 @@ switch ($r) {
         unset($j);
         if (!$ok) out(409, ['error' => 'claimed', 'msg' => 'هذا الستكر ينطبع من جهاز ثاني']);
         save($S, false);
+        out(200, ['ok' => true]);
+    }
+    case 'jobs/release': {
+        // الطابعة فشلت: نرجّع الستكر للطابور حتى الطابعة الثانية تطبعه
+        if (!$admin) deny();
+        $id = (int)($b['id'] ?? 0); $dev = substr(preg_replace('/[^A-Za-z0-9_-]/', '', (string)($b['dev'] ?? '')), 0, 40);
+        foreach ($S['jobs'] as &$j) if ($j['id'] === $id && ($j['cl'] ?? '') === $dev && ($j['st'] ?? '') === 'new') { unset($j['cl'], $j['ct']); $j['pd'] = ''; $j['fails'] = (int)($j['fails'] ?? 0) + 1; }
+        unset($j);
+        save($S);
         out(200, ['ok' => true]);
     }
     case 'jobs/mark': {
@@ -811,6 +832,24 @@ switch ($r) {
         if ($u['role'] === 'admin' && count(admins($S)) <= 1) out(400, ['error' => 'last', 'msg' => 'لازم يبقى مدير واحد على الأقل']);
         remove_user($S, $uid);
         done($S, $me);
+    }
+    case 'day/set': {
+        if (!$admin) deny();
+        $d = (int)($b['d'] ?? 0);
+        if (!in_array($d, [1, 2], true)) out(400, ['error' => 'day', 'msg' => 'اختار اليوم']);
+        $cur = (int)$S['day'];
+        if ($d !== $cur) {
+            // نحفظ اليوم الحالي بحده، ونرجّع بيانات اليوم الثاني (أو نبديه فارغ)
+            $S['days'][(string)$cur] = ['seats' => $S['seats'], 'guests' => $S['guests'], 'jobs' => $S['jobs'], 'att' => $S['att'], 'vipOff' => !empty($S['settings']['vipOff']), 'at' => now_ms()];
+            $n = is_array($S['days'][(string)$d] ?? null) ? $S['days'][(string)$d] : ['seats' => [], 'guests' => [], 'jobs' => [], 'att' => [], 'vipOff' => $d === 2];
+            $S['seats'] = (array)($n['seats'] ?? []); $S['guests'] = (array)($n['guests'] ?? []);
+            $S['jobs'] = array_values((array)($n['jobs'] ?? [])); $S['att'] = array_values((array)($n['att'] ?? []));
+            $S['settings']['vipOff'] = !empty($n['vipOff']);
+            unset($S['days'][(string)$d]);
+            $S['day'] = $d;
+            $GLOBALS['VIPOFF'] = !empty($S['settings']['vipOff']);
+        }
+        done($S, $me, ['ok' => true, 'day' => $S['day']]);
     }
     case 'att/list': {
         if (!$admin && !can($me, 'guests') && !can($me, 'checkin')) deny();
