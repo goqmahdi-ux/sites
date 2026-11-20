@@ -571,6 +571,8 @@ switch ($r) {
         }
         $gd = in_array($b['gd'] ?? null, ['m', 'f'], true) ? $b['gd'] : (in_array($g['gd'] ?? null, ['m', 'f'], true) ? $g['gd'] : null);
         $seat = null;
+        // الكرسي المختار يدوياً انحجز من جهاز ثاني قبل شوية
+        if ($want !== '' && !empty($b['pick']) && seat_rc($want) && isset($S['seats'][$want]) && !$move) { [$tr, $tc] = seat_rc($want); out(409, ['error' => 'taken', 'msg' => 'الكرسي ' . lbl_of($tr, $tc) . ' بالصف ' . $tr . ' انحجز هسه من جهاز ثاني، اختار غيره']); }
         if ($want !== '' && seat_rc($want) && !isset($S['seats'][$want])) {
             [$wr, $wc] = seat_rc($want); $zg = zone_g($wr, $wc);
             if ($gd && $gd !== $zg) out(409, ['error' => 'gender', 'msg' => 'هذا الكرسي مخصّص ' . g_lbl($zg) . ' فقط']);
@@ -585,6 +587,9 @@ switch ($r) {
         $S['guests'][$gid]['s'] = $seat; $S['guests'][$gid]['c'] = $cat; $S['guests'][$gid]['gd'] = $gd;
         $S['seats'][$seat] = ['n' => $S['guests'][$gid]['n'], 'c' => $cat, 't' => now_ms(), 'g' => $gid, 'by' => $me['name'], 'bu' => $me['uid']];
         $job = can($me, 'print') ? add_job($S, $me, $seat, $S['guests'][$gid]['n']) : null;
+        // الجهاز الي بيه طابعة يطبع ستكره بنفسه، والأجهزة الثانية ما تطبعه
+        $pd = substr(preg_replace('/[^A-Za-z0-9_-]/', '', (string)($b['pd'] ?? '')), 0, 40);
+        if ($job && $pd !== '') { $S['jobs'][count($S['jobs']) - 1]['pd'] = $pd; $job['pd'] = $pd; }
         done($S, $me, ['ok' => true, 'seat' => $seat, 'guestId' => $gid, 'job' => $job]);
     }
     case 'reprint': {
@@ -606,9 +611,23 @@ switch ($r) {
         $job = add_job($S, $me, 'R1-13', 'ستكر تجريبي', 'test');
         done($S, $me, ['ok' => true, 'job' => $job]);
     }
+    case 'jobs/claim': {
+        // جهاز واحد بس يطبع كل طلب، حتى لو نفس الحساب فاتح على جهازين
+        $id = (int)($b['id'] ?? 0); $dev = substr(preg_replace('/[^A-Za-z0-9_-]/', '', (string)($b['dev'] ?? '')), 0, 40);
+        $ok = false;
+        foreach ($S['jobs'] as &$j) if ($j['id'] === $id) {
+            if (!$admin && ($j['by'] ?? '') !== $me['uid']) deny();
+            // إذا الجهاز الي حجزه ما طبعه خلال 30 ثانية (انطفى أو الطابعة فصلت) يكدر جهاز ثاني ياخذه
+            if (($j['st'] ?? '') === 'new' && (empty($j['cl']) || $j['cl'] === $dev || now_ms() - (int)($j['ct'] ?? 0) > 30000)) { $j['cl'] = $dev; $j['ct'] = now_ms(); $ok = true; }
+        }
+        unset($j);
+        if (!$ok) out(409, ['error' => 'claimed', 'msg' => 'هذا الستكر ينطبع من جهاز ثاني']);
+        save($S, false);
+        out(200, ['ok' => true]);
+    }
     case 'jobs/mark': {
-        if (!$admin) deny();
         $id = (int)($b['id'] ?? 0); $stt = (string)($b['st'] ?? '');
+        if (!$admin) { $mine = false; foreach ($S['jobs'] as $j0) if ($j0['id'] === $id && ($j0['by'] ?? '') === $me['uid']) $mine = true; if (!$mine || $stt !== 'printed') deny(); }
         if (!in_array($stt, ['new', 'printed', 'done', 'cancel'], true)) out(400, ['error' => 'st']);
         foreach ($S['jobs'] as &$j) if ($j['id'] === $id) {
             $j['st'] = $stt;
