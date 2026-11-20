@@ -222,7 +222,7 @@ function public_state(array $S, array $me): array {
     foreach ($S['jobs'] as $j) if (($j['st'] ?? '') === 'new' && ($j['to'] ?? '') === $me['uid']) $pend++;
     $set = $S['settings'];
     $set['printModeEff'] = 'queue';
-    $st = ['version' => $S['version'], 'day' => (int)($S['day'] ?? 1), 'days' => array_map('strval', array_keys($S['days'] ?? [])), 'seats' => obj($S['seats']), 'guests' => obj($S['guests']), 'settings' => $set,
+    $st = ['version' => $S['version'], 'appv' => (int)@filemtime(__DIR__ . '/index.html'), 'day' => (int)($S['day'] ?? 1), 'days' => array_map('strval', array_keys($S['days'] ?? [])), 'seats' => obj($S['seats']), 'guests' => obj($S['guests']), 'settings' => $set,
         'stations' => 0, 'pending' => $pend, 'caps' => ['team', 'queue'],
         'me' => ['name' => $me['name'], 'role' => $me['role'], 'id' => $me['uid'], 'perms' => $me['perms'],
             'task' => $me['task'], 'sup' => $me['sup'], 'supName' => ($me['sup'] && isset($S['users'][$me['sup']])) ? $S['users'][$me['sup']]['name'] : '']];
