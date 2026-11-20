@@ -142,11 +142,30 @@ function auth(array $S, string $tok): ?array {
 }
 function can(array $me, string $p): bool { return $me['role'] === 'admin' || in_array($p, $me['perms'], true); }
 function admins(array $S): array { return array_keys(array_filter($S['users'], fn($u) => $u['role'] === 'admin')); }
+/* الأجهزة المربوطة بطابعة (كيبل/بلوتوث) تبلغ عن نفسها، والطباعة تروح لها */
+function pr_file(): string { return data_dir() . '/printers.json'; }
+function pr_list(): array { $p = @json_decode((string)@file_get_contents(pr_file()), true); return is_array($p) ? $p : []; }
+function pr_mark(string $uid): void {
+    $p = pr_list(); $now = time();
+    if ($now - (int)($p[$uid] ?? 0) < 8) return;
+    $p[$uid] = $now;
+    foreach ($p as $k => $t) if ($now - (int)$t > 600) unset($p[$k]);
+    @file_put_contents(pr_file(), json_encode($p), LOCK_EX);
+}
+function printer_admins(array $S): array {
+    $a = []; $now = time();
+    foreach (pr_list() as $u => $t) if ($now - (int)$t < 45 && isset($S['users'][$u]) && $S['users'][$u]['role'] === 'admin') $a[$u] = (int)$t;
+    arsort($a);
+    return array_map('strval', array_keys($a));
+}
 function target_admin(array $S, array $me): ?string {
-    if ($me['role'] === 'admin') return $me['uid'];
+    $pa = printer_admins($S);
+    if ($me['role'] === 'admin') return (!$pa || in_array($me['uid'], $pa, true)) ? $me['uid'] : $pa[0];
     $sup = $me['sup'];
-    if ($sup && isset($S['users'][$sup]) && $S['users'][$sup]['role'] === 'admin') return $sup;
-    return admins($S)[0] ?? null;
+    $supOk = $sup && isset($S['users'][$sup]) && $S['users'][$sup]['role'] === 'admin';
+    if ($supOk && (!$pa || in_array($sup, $pa, true))) return $sup;
+    if ($pa) return $pa[0];
+    return $supOk ? $sup : (admins($S)[0] ?? null);
 }
 function add_name_job(array &$S, array $me, string $n, string $j, bool $num = false): array {
     $to = target_admin($S, $me);
@@ -332,6 +351,7 @@ if ($method === 'GET') {
         }
         $S = load(); $me = auth($S, token());
         if (!$me) out(401, ['error' => 'auth']);
+        if (!empty($_GET['pr']) && $me['role'] === 'admin') pr_mark($me['uid']);
         out(200, public_state($S, $me));
     }
     if ($r === 'export.csv') {
