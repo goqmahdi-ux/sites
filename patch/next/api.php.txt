@@ -789,7 +789,7 @@ switch ($r) {
         $lead = (string)($b['lead'] ?? '');
         $t['lead'] = in_array($lead, $m, true) ? $lead : null;
         $ar = (string)($b['ar'] ?? '');
-        $t['ar'] = in_array($ar, ['gate', 'yard', 'rec', 'lobby', 'hall'], true) ? $ar : ($t['ar'] ?? 'hall');
+        $t['ar'] = in_array($ar, ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 'hall'], true) ? $ar : ($t['ar'] ?? 'hall');
         foreach (['x' => [0, 1], 'y' => [0, 1], 'r' => [0.02, 0.35]] as $k => [$lo, $hi])
             if (is_numeric($b[$k] ?? null)) $t[$k] = round(max($lo, min($hi, (float)$b[$k])), 4); elseif (!isset($t[$k])) $t[$k] = null;
         if (!$upd) $id = 't' . rid(3);

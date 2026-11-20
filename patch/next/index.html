@@ -5696,15 +5696,18 @@ const TCOL=['#5a1238','#16a34a','#0284c7','#ea580c','#7c3aed','#0d9488','#a16207
 const teamOf=id=>(D.teams||[]).find(t=>t.m.includes(id));
 const nm=id=>(D.orgs.find(o=>o.id===id)||{}).n||'';
 /* الأماكن: بوابات الجامعة والساحة على مخطط الجامعة، وخارج القاعة وداخلها على مخطط القاعة */
-const TAR={gate:{n:'بوابات الجامعة',c:'#16a34a',v:'s'},yard:{n:'الساحة الخارجية',c:'#65a30d',v:'s'},rec:{n:'الاستقبال والتسجيل',c:'#0d9488',v:'r'},lobby:{n:'أبواب القاعة من برّه',c:'#0284c7',v:'r'},hall:{n:'داخل القاعة',c:'#5a1238',v:'h'}};
-const VH={s:1340,h:720,r:720},TDEF={gate:{x:.437,y:.128,r:.062},yard:{x:.454,y:.33,r:.09},rec:{x:.753,y:.545,r:.06},lobby:{x:.092,y:.42,r:.05},hall:{x:.5,y:.45,r:.08}};
-const REC={hub:{x:130,y:520},ent:{x:500,y:604},dM:{x:500,y:150},dC:{x:92,y:150},dA:{x:908,y:150}};
+/* محطات طريق الضيف من برّه لباب القاعة (بالترتيب) */
+const STN=[['s1','استعلامات خارجية','أول نقطة يوصلها الضيف','#7c3aed',830,60],['s2','المدخل الداخلي','للحرم الجامعي','#16a34a',500,60],['s3','المدخل الداخلي','لبناية الجامعة','#65a30d',170,60],
+ ['s4','ممر التسجيل','الطريق لطاولات التسجيل','#0891b2',170,310],['s5','التسجيل','حاسبتين + طابعتين للستكر','#0d9488',500,310],['s6','استقبال المسجلين','بعد التسجيل','#0284c7',830,310],
+ ['s7','المصاعد (4)','الطابق الأرضي','#a16207',830,540],['s8','المصاعد (4)','الطابق الثاني','#ea580c',830,800],['s9','الاستقبال من المصاعد','لحد باب القاعة','#be185d',500,800]];
+const TAR={};STN.forEach(([k,a,b,c],i)=>TAR[k]={n:(i+1)+'. '+a+(k==='s2'||k==='s3'||k==='s7'||k==='s8'?' '+b:''),c,v:'r'});TAR.hall={n:'داخل القاعة',c:'#5a1238',v:'h'};
+const VH={s:1340,h:720,r:1040},TDEF={hall:{x:.5,y:.45,r:.08}};STN.forEach(([k,,,,x,y])=>TDEF[k]={x:x/1000,y:(y+132)/1040,r:.036});
 const tAr=t=>TAR[t&&t.ar]?t.ar:'hall';
 const TPL={g1:{n:'البوابة الرئيسية',x:437,y:104},g2:{n:'البوابة الثانية',x:150,y:104}};
 const BLD={x:472,y:770,ent:{x:437,y:588}},HUB={x:440,y:650},DOOR={x:915,y:650};
 function tPlLoad(){const p=D.tpl||{};for(const k in TPL){const q=p[k];if(q&&q.x!=null){TPL[k].x=q.x*1000;TPL[k].y=q.y*1340}}}
 function tMsg(t){const L=t.m.map(id=>D.orgs.find(o=>o.id===id)).filter(Boolean);return`فريق ${t.n}\nالمكان: ${t.place?t.place+' · ':''}${TAR[tAr(t)].n}${t.task?'\nالمهمة: '+t.task:''}${t.lead?'\nالمسؤول: '+nm(t.lead):''}\nالأعضاء:\n${L.map(o=>'- '+o.n+(o.ph?' ('+o.ph+')':'')).join('\n')}`}
-let tSel='',tView='s',tMode='hub';
+let tSel='',tView='r',tMode='hub';
 const NS='http://www.w3.org/2000/svg';
 const sel_=(tag,at,par)=>{const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);par&&par.append(e);return e};
 const stx=(par,x,y,s,at)=>{const e=sel_('text',Object.assign({x,y,'text-anchor':'middle',direction:'rtl'},at||{}),par);e.textContent=s;return e};
@@ -5783,7 +5786,7 @@ function siteBase(g,onBld){
 function hallBase(g,onDoor){
  const zg=(r,c)=>(c>=11&&c<=20)||(c<=10&&r===1),vip=(r,c)=>r<=((c>=11&&c<=20)?3:2),ok=(r,c)=>!((r===11&&(c===10||c===21))||(c===20&&r%2===0));
  sel_('rect',{x:30,y:590,width:940,height:122,rx:18,fill:'url(#tpHatch)'},g);
- stx(g,952,610,'خارج القاعة · الممر والاستقبال',{'font-size':12.5,fill:'#a8a29e','font-weight':700,'text-anchor':'start'});
+ stx(g,952,610,'خارج القاعة · الاستقبال من المصاعد',{'font-size':12.5,fill:'#a8a29e','font-weight':700,'text-anchor':'start'});
  sel_('rect',{x:40,y:18,width:920,height:552,rx:22,fill:'#fbf9f7'},g);
  sel_('path',{d:'M455 570H62a22 22 0 0 1-22-22V40a22 22 0 0 1 22-22h876a22 22 0 0 1 22 22v508a22 22 0 0 1-22 22H545',fill:'none',stroke:'#cdc3b9','stroke-width':3},g);
  stx(g,500,585,'باب القاعة',{'font-size':11,fill:'#a8a29e','font-weight':600});
@@ -5794,45 +5797,30 @@ function hallBase(g,onDoor){
    sel_('rect',{x:B.x0+(9-i)*26+off,y:148+(r-1)*25,width:20,height:17,rx:4,fill:m?(v?'#27272a':'#52525b'):(v?'#ec7fad':'#f9c4da'),opacity:.55},g)}}
  const dg=sel_('g',{class:onDoor?'tpck':''},g);onDoor&&dg.addEventListener('click',onDoor);
  sel_('rect',{x:DOOR.x-66,y:DOOR.y-20,width:132,height:40,rx:12,fill:'#0d9488',filter:'url(#tpSh)'},dg);
- stx(dg,DOOR.x,DOOR.y-2,'الاستقبال والتسجيل',{'font-size':12.5,'font-weight':700,fill:'#fff'});stx(dg,DOOR.x,DOOR.y+13,'اضغط وشوف المخطط ←',{'font-size':10.5,fill:'#ecfccb'});
+ stx(dg,DOOR.x,DOOR.y-2,'الطريق لحد القاعة',{'font-size':12.5,'font-weight':700,fill:'#fff'});stx(dg,DOOR.x,DOOR.y+13,'اضغط وشوف المحطات ←',{'font-size':10.5,fill:'#ecfccb'});
  for(const [x,c] of [[40,'#0284c7'],[960,'#ea580c']])sel_('rect',{x:x-7,y:60,width:14,height:70,rx:4,fill:c},g);
 }
-/* مخطط الاستقبال: باب البناية، الاستعلامات، منطقة التسجيل وطباعة الستكر، غرفة العمليات، وأبواب القاعة */
+/* مخطط طريق الضيف: من الاستعلامات الخارجية لحد باب القاعة */
 function recBase(g,on){
  const R=(x,y,w,h,f,o)=>sel_('rect',Object.assign({x,y,width:w,height:h,rx:6,fill:f},o||{}),g);
- const T=(x,y,s,at)=>stx(g,x,y,s,at);
- R(0,612,1000,108,'url(#tpTiles)',{rx:0});T(975,700,'الساحة الخارجية',{'font-size':14,fill:'#a39686','font-weight':700,'text-anchor':'start'});
- const hb=sel_('g',{class:on?'tpck':''},g);on&&hb.addEventListener('click',on);
- sel_('rect',{x:20,y:12,width:960,height:116,rx:16,fill:'#f6edf1',stroke:'#5a1238','stroke-width':2.5},hb);
- for(const [x,n] of [[200,'قسم C'],[500,'قسم B'],[800,'قسم A']]){for(let r=0;r<3;r++)for(let i=0;i<8;i++)sel_('rect',{x:x-92+i*24,y:28+r*16,width:17,height:11,rx:3,fill:x===500?'#52525b':'#f4a9c8',opacity:.45},hb);stx(hb,x,104,n,{'font-size':13,'font-weight':700,fill:'#a8a29e'})}
- sel_('rect',{x:396,y:52,width:208,height:40,rx:12,fill:'#5a1238'},hb);stx(hb,500,77,on?'القاعة · اضغط وادخل ↑':'القاعة',{'font-size':15,'font-weight':700,fill:'#fff'});
- R(20,150,960,450,'#fbf9f7',{rx:18,stroke:'#cdc3b9','stroke-width':3});
- R(478,156,44,440,'#efe4d2',{rx:4,opacity:.8});
- T(955,586,'الاستقبال',{'font-size':16,fill:'#78716c','font-weight':800,'text-anchor':'start'});
- // أبواب القاعة
- for(const [d,n,c,sub] of [[REC.dM,'باب القاعة','#1c1917',''],[REC.dC,'باب C','#0284c7','↑ ممر جهة C'],[REC.dA,'باب A','#ea580c','↑ ممر جهة A']]){
-  sel_('rect',{x:d.x-56,y:d.y-17,width:112,height:34,rx:10,fill:c,stroke:'#fff','stroke-width':2,filter:'url(#tpSh)'},g);T(d.x,d.y+5,n,{'font-size':14,'font-weight':800,fill:'#fff'});
-  sub&&T(d.x,d.y+38,sub,{'font-size':12,'font-weight':700,fill:c})}
- // الاستعلامات
- R(230,212,232,236,'#7c3aed',{rx:16,'fill-opacity':.06,stroke:'#7c3aed','stroke-width':2,'stroke-dasharray':'8 6'});
- T(346,242,'الاستعلامات',{'font-size':17,'font-weight':800,fill:'#7c3aed'});T(346,262,'توجيه الضيوف والأسئلة',{'font-size':12,fill:'#78716c'});
- sel_('path',{d:'M276 300Q346 274 416 300',fill:'none',stroke:'#7c3aed','stroke-width':12,'stroke-linecap':'round',opacity:.55},g);
- // منطقة التسجيل
- R(548,212,410,300,'#0d9488',{rx:16,'fill-opacity':.07,stroke:'#0d9488','stroke-width':2.5,'stroke-dasharray':'8 6'});
- T(753,242,'منطقة التسجيل',{'font-size':18,'font-weight':800,fill:'#0d9488'});T(753,262,'تسجيل الحضور + طباعة الستكر',{'font-size':12.5,fill:'#78716c'});
- for(const [x,n] of [[658,'حاسبة 1 + طابعة'],[848,'حاسبة 2 + طابعة']]){
-  R(x-80,276,160,40,'#fff',{rx:8,stroke:'#0d9488','stroke-width':2,filter:'url(#tpSh)'});
-  sel_('rect',{x:x+50,y:284,width:18,height:12,rx:2,fill:'#0d9488'},g);sel_('rect',{x:x+53,y:296,width:12,height:9,rx:1,fill:'#99f6e4'},g);
-  T(x-8,302,n,{'font-size':12.5,'font-weight':700,fill:'#115e59'})}
- // انتظار
- for(let r=0;r<3;r++)for(let i=0;i<5;i++)R(244+i*42,474+r*24,30,15,'#d6d3d1',{rx:4,opacity:.7});T(346,562,'منطقة انتظار',{'font-size':12,fill:'#a8a29e','font-weight':600});
- // غرفة العمليات
- R(40,440,176,136,'#f4ede4',{rx:12,stroke:'#1c1917','stroke-width':2});
- sel_('rect',{x:REC.hub.x-80,y:REC.hub.y-24,width:160,height:48,rx:14,fill:'#1c1917',filter:'url(#tpSh)'},g);T(REC.hub.x,REC.hub.y-3,'غرفة العمليات',{'font-size':14,'font-weight':700,fill:'#fff'});T(REC.hub.x,REC.hub.y+15,'الإدارة',{'font-size':11.5,fill:'#d6d3d1'});
- // باب البناية
- const eg=sel_('g',{class:on?'tpck':''},g);on&&eg.addEventListener('click',()=>tSetView('s'));
- sel_('rect',{x:REC.ent.x-90,y:REC.ent.y-20,width:180,height:40,rx:12,fill:'#65a30d',stroke:'#fff','stroke-width':2,filter:'url(#tpSh)'},eg);
- stx(eg,REC.ent.x,REC.ent.y-2,'باب البناية · المدخل',{'font-size':13.5,'font-weight':800,fill:'#fff'});stx(eg,REC.ent.x,REC.ent.y+13,'من الساحة والبوابات ↑',{'font-size':10.5,fill:'#ecfccb'});
+ const T=(x,y,s,at,p)=>stx(p||g,x,y,s,at);
+ for(const [y,h,n,c] of [[15,250,'الحرم الجامعي','#16a34a'],[275,480,'البناية · الطابق الأرضي','#0284c7'],[765,265,'الطابق الثاني','#ea580c']]){
+  R(15,y,970,h,c,{rx:20,'fill-opacity':.05,stroke:c,'stroke-opacity':.35,'stroke-width':2});T(965,y+28,n,{'font-size':15,'font-weight':800,fill:c,'text-anchor':'start'})}
+ const arr=(d)=>{sel_('path',{d,fill:'none',stroke:'#1c1917','stroke-width':10,opacity:.08,'stroke-linecap':'round'},g);sel_('path',{d,fill:'none',stroke:'#1c1917','stroke-width':3.5,class:'tpflow','marker-end':'url(#tpArr)','stroke-linecap':'round'},g)};
+ arr('M690 150H644');arr('M360 150H314');arr('M75 244V304');arr('M310 400H356');arr('M640 400H686');arr('M925 494V534');arr('M760 724V794');arr('M690 890H644');arr('M360 890H314');
+ T(745,764,'بالمصعد للطابق الثاني ↑',{'font-size':13,'font-weight':800,fill:'#ea580c','text-anchor':'start'});
+ STN.forEach(([k,a,b,c,x,y],i)=>{
+  sel_('rect',{x:x-135,y,width:270,height:180,rx:18,fill:'#fff',stroke:c,'stroke-width':2.5,filter:'url(#tpSh)'},g);
+  sel_('rect',{x:x-135,y,width:270,height:8,rx:4,fill:c},g);
+  sel_('circle',{cx:x+108,cy:y+32,r:15,fill:c},g);T(x+108,y+38,String(i+1),{'font-size':15,'font-weight':800,fill:'#fff',direction:'ltr'});
+  T(x-8,y+38,a,{'font-size':17,'font-weight':800,fill:'#1c1917'});T(x,y+60,b,{'font-size':12.5,'font-weight':600,fill:'#78716c'});
+  if(k==='s7'||k==='s8')for(let e=0;e<4;e++){const ex=x-66+e*36;sel_('rect',{x:ex-13,y:y+68,width:26,height:28,rx:3,fill:'#f5f5f4',stroke:c,'stroke-width':1.6},g);sel_('line',{x1:ex,y1:y+69,x2:ex,y2:y+95,stroke:c,'stroke-width':1.4},g)}
+  if(k==='s5')for(const dx of [-50,50]){sel_('rect',{x:x+dx-34,y:y+70,width:68,height:24,rx:5,fill:'#f0fdfa',stroke:c,'stroke-width':1.6},g);sel_('rect',{x:x+dx+12,y:y+75,width:14,height:10,rx:2,fill:c},g);T(x+dx-8,y+87,'حاسبة',{'font-size':10,'font-weight':700,fill:'#115e59'})}
+ });
+ const hg=sel_('g',{class:on?'tpck':''},g);on&&hg.addEventListener('click',on);
+ sel_('rect',{x:35,y:800,width:270,height:180,rx:18,fill:'#5a1238',filter:'url(#tpSh)'},hg);
+ for(let r=0;r<3;r++)for(let i=0;i<7;i++)sel_('rect',{x:82+i*26,y:880+r*18,width:19,height:12,rx:3,fill:'#f3d8e5',opacity:.35},hg);
+ stx(hg,170,840,'باب القاعة',{'font-size':20,'font-weight':800,fill:'#fff'});stx(hg,170,864,on?'اضغط وشوف داخل القاعة ←':'داخل القاعة',{'font-size':13,fill:'#f3d8e5'});
 }
 function mkSvg(v,onA){tDefs();const s=document.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 1000 '+VH[v]);s.setAttribute('role','img');s.setAttribute('aria-label',v==='s'?'مخطط الجامعة':v==='r'?'مخطط الاستقبال والتسجيل':'مخطط القاعة');
  const b=sel_('g',{},s);(v==='s'?siteBase:v==='r'?recBase:hallBase)(b,onA);s.gL=sel_('g',{},s);s.gP=sel_('g',{},s);s.gZ=sel_('g',{},s);s.gT=sel_('g',{},s);s.v=v;return s}
@@ -5883,12 +5871,6 @@ function tDraw(svg,VM,o){['gL','gP','gZ','gT'].forEach(k=>svg[k].innerHTML='');c
    sel_('path',{d:`M${p.x-8} ${cy+19}L${p.x} ${cy+28}L${p.x+8} ${cy+19}Z`,fill:'#1c1917'},g);
    if(o.chrome){g.addEventListener('touchstart',e=>{e.cancelable&&e.preventDefault()},{passive:false});tDragOn(svg,g,p,async()=>{try{apply(await api('teams/pl',{pl:{g1:{x:TPL.g1.x/1000,y:TPL.g1.y/1340},g2:{x:TPL.g2.x/1000,y:TPL.g2.y/1340}}}));toast('انحفظ مكان '+p.n)}catch(x){toast(x.message,1)}},null,o.redraw)}}
  }else if(svg.v==='r'){
-  if(o.chrome&&tMode==='hub')for(const t of list){const H=REC.hub,mx=(H.x+t.x)/2,my=Math.min(H.y,t.y)-60,[ex,ey]=tEdge(t,mx,my,2);
-   sel_('path',{d:`M${H.x} ${H.y-24}Q${mx} ${my} ${ex} ${ey}`,fill:'none',stroke:t.c,'stroke-width':tSel===t.id?3.5:2.5,class:'tpflow',opacity:tSel===t.id?1:tOp(t)*.6,'stroke-linecap':'round'},svg.gL)}
-  if(o.chrome&&tMode==='flow'){const ar=(a,b,bx,by,dash)=>{const mx=(a.x+b.x)/2+bx,my=(a.y+b.y)/2+by;sel_('path',{d:`M${a.x} ${a.y}Q${mx} ${my} ${b.x} ${b.y}`,fill:'none',stroke:'#1c1917','stroke-width':3,class:'tpflow','marker-end':'url(#tpArr)',opacity:.85,'stroke-dasharray':dash||''},svg.gL)};
-   ar({x:530,y:582},{x:640,y:470},10,20);ar({x:620,y:214},{x:530,y:172},10,0);ar({x:470,y:582},{x:400,y:430},-10,20,'6 6');
-   [['1',612,600],['2',612,486],['3',590,192]].forEach(([n,x,y])=>{sel_('circle',{cx:x,cy:y,r:13,fill:'#facc15',stroke:'#1c1917','stroke-width':1.8},svg.gL);stx(svg.gL,x,y+5,n,{'font-size':14,'font-weight':800,fill:'#1c1917',direction:'ltr'})});
-   stx(svg.gL,290,700,'١ الدخول ← ٢ التسجيل والستكر ← ٣ باب القاعة والكرسي',{'font-size':14,'font-weight':800,fill:'#1c1917','paint-order':'stroke',stroke:'#fff','stroke-width':4})}
  }else{
   const HL=list;
   if(o.chrome&&tMode==='hub'){for(const t of HL){const hall_=t.ar==='hall'&&t.y<590,cx=hall_?500:(HUB.x+t.x)/2,cy=hall_?Math.min(560,t.y+(HUB.y-t.y)*.62):HUB.y,[ex,ey]=tEdge(t,cx,cy,2);
@@ -5915,8 +5897,8 @@ P2.innerHTML=`<div class="tpTop"><div><h2>الفرق وأماكنها</h2><div c
 <div class="tpB"><div class="tpK" id="tpK"></div>
  <div class="tpMain">
   <div class="tpPan"><div class="tpPh"><b>الفرق</b><small id="tpDay"></small></div><div class="tpList" id="tpList"></div></div>
-  <div class="tpPan"><div class="tpPh"><div class="tpSeg big" id="tpView"><button data-v="s" class="on">مخطط الجامعة</button><button data-v="r">الاستقبال والتسجيل</button><button data-v="h">داخل القاعة</button></div><small id="tpSelL"></small><span class="sp2"></span><div class="tpSeg" id="tpMode"><button data-m="hub" class="on">الربط بغرفة العمليات</button><button data-m="flow">مسار الضيف</button><button data-m="none">بدون</button></div></div>
-   <div class="tpStage" id="tpStage"><div class="tpVw on" id="tpVS"><div class="tpSiteW" id="tpSiteW"></div><div class="tpPlaces" id="tpPlaces"></div></div><div class="tpVw" id="tpVR"><div class="tpHallW tpRecW" id="tpRecW"></div></div><div class="tpVw" id="tpVH"><div class="tpHallW" id="tpHallW"></div></div><div class="tpTip" id="tpTip"></div></div>
+  <div class="tpPan"><div class="tpPh"><div class="tpSeg big" id="tpView"><button data-v="r" class="on">الطريق لحد القاعة</button><button data-v="h">داخل القاعة</button></div><small id="tpSelL"></small><span class="sp2"></span><div class="tpSeg" id="tpMode"><button data-m="hub" class="on">الربط بغرفة العمليات</button><button data-m="flow">مسار الضيف</button><button data-m="none">بدون</button></div></div>
+   <div class="tpStage" id="tpStage"><div class="tpVw" id="tpVS"><div class="tpSiteW" id="tpSiteW"></div><div class="tpPlaces" id="tpPlaces"></div></div><div class="tpVw on" id="tpVR"><div class="tpHallW tpRecW" id="tpRecW"></div></div><div class="tpVw" id="tpVH"><div class="tpHallW" id="tpHallW"></div></div><div class="tpTip" id="tpTip"></div></div>
    <div class="tpLeg" id="tpLeg"></div></div>
  </div>
  <div class="tpPan tpTreeP"><div class="tpPh"><b>هيكل الربط</b><small>منو مسؤول عن منو، حسب المكان</small></div><div class="tpTreeS"><div class="tpTree" id="tpTree"></div></div></div>
@@ -5926,7 +5908,7 @@ function tTip(e,html){const tp=$('#tpTip');if(!tp)return;if(!e){tp.style.opacity
 function tCtr(w){const d=w.scrollWidth-w.clientWidth;if(d>0)w.scrollLeft=(getComputedStyle(w).direction==='rtl'?-1:1)*d/2}
 function tSetView(v){tView=v;$('#tpVS').classList.toggle('on',v==='s');$('#tpVR').classList.toggle('on',v==='r');$('#tpVH').classList.toggle('on',v==='h');P2.querySelectorAll('#tpView button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));tRender();tCtr(tW(v))}
 function tLeg(){const c=`<span><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="#5a1238"/></svg>حاضر</span><span><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="#fff" stroke="#5a1238" stroke-width="1.6" stroke-dasharray="2.5 2"/></svg>ما حاضر</span><span><svg width="18" height="18"><circle cx="9" cy="9" r="5.5" fill="#5a1238"/><circle cx="9" cy="9" r="8" fill="none" stroke="#f59e0b" stroke-width="1.8"/></svg>مسؤول الفريق</span>`;
- $('#tpLeg').innerHTML=(tView==='s'?'<span><i style="background:#1c1917"></i>بوابة</span><span><i style="background:#fff;border:2px solid #5a1238"></i>المبنى الرئيسي</span><span><i style="background:#8db873"></i>حدائق</span>':tView==='r'?'<span><i style="background:#0d9488"></i>منطقة التسجيل</span><span><i style="background:#7c3aed"></i>الاستعلامات</span><span><i style="background:#65a30d"></i>باب البناية</span><span><i style="background:#1c1917"></i>أبواب القاعة</span>':'<span><i style="background:#3f3f46"></i>كراسي رجال</span><span><i style="background:#f4a9c8"></i>كراسي نساء</span>')+c+'<span class="h">اسحب الدائرة أو البوابة حتى تغير مكانها</span>'}
+ $('#tpLeg').innerHTML=(tView==='s'?'<span><i style="background:#1c1917"></i>بوابة</span><span><i style="background:#fff;border:2px solid #5a1238"></i>المبنى الرئيسي</span><span><i style="background:#8db873"></i>حدائق</span>':tView==='r'?'<span><i style="background:#16a34a"></i>١–٣ الحرم الجامعي</span><span><i style="background:#0284c7"></i>٤–٧ الطابق الأرضي</span><span><i style="background:#ea580c"></i>٨–٩ الطابق الثاني</span>':'<span><i style="background:#3f3f46"></i>كراسي رجال</span><span><i style="background:#f4a9c8"></i>كراسي نساء</span>')+c+'<span class="h">اسحب الدائرة أو البوابة حتى تغير مكانها</span>'}
 function tCard(t){const n=t.m.length,pr=tPres(t),on=tSel===t.id,dim=tSel&&!on;
  return`<div class="tpC${on?' on':''}${dim?' dim':''}" data-t="${t.id}" style="--c:${t.c}"><div class="tpCh"><b>${esc(t.n)}</b><span class="sp2"></span><span class="tpChip">${esc(TAR[t.ar].n)}</span></div>
  <div class="tpMeta">${TIC.pin}<span>${esc(t.place)}</span></div>${t.x==null?'<div class="tpWarn">ما محدد مكانه على المخطط، اضغط تعديل</div>':''}
@@ -5936,6 +5918,7 @@ function tCard(t){const n=t.m.length,pr=tPres(t),on=tSel===t.id,dim=tSel&&!on;
 function tRender(){if(!P2.classList.contains('on'))return;tPlLoad();
  if(!tSvgS){tSvgS=mkSvg('s',()=>tSetView('h'));tSvgH=mkSvg('h',()=>tSetView('r'));tSvgR=mkSvg('r',()=>tSetView('h'));$('#tpSiteW').append(tSvgS);$('#tpHallW').append(tSvgH);$('#tpRecW').append(tSvgR);tBind(tSvgS);tBind(tSvgH);tBind(tSvgR);
   [tSvgS,tSvgH,tSvgR].forEach(s=>s.addEventListener('click',e=>{if(tSel&&!e.target.closest('.tpz,.tpck')){tSel='';tRender()}}))}
+ $('#tpMode').style.visibility=tView==='h'?'':'hidden';
  const T=D.teams||[];tVM=T.map(tvm);const inT=new Set(T.flatMap(t=>t.m)),tot=D.orgs.length,prs=tVM.reduce((a,t)=>a+tPres(t),0),sel=tVM.find(t=>t.id===tSel);
  $('#tpSub').textContent=`${T.length} فريق · ${inT.size} منظم بفرق · ${tot-inT.size} بدون فريق`;
  $('#tpDay').textContent='الحضور: '+(typeof dayLbl==='function'?dayLbl(day):day);$('#tpSelL').textContent=sel?'· '+sel.n:'';
