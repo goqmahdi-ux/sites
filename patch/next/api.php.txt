@@ -663,12 +663,12 @@ switch ($r) {
         if ($want !== '' && !empty($b['pick']) && seat_rc($want) && isset($S['seats'][$want]) && !$move) { [$tr, $tc] = seat_rc($want); out(409, ['error' => 'taken', 'msg' => 'الكرسي ' . lbl_of($tr, $tc) . ' بالصف ' . $tr . ' انحجز هسه من جهاز ثاني، اختار غيره']); }
         if ($want !== '' && seat_rc($want) && !isset($S['seats'][$want])) {
             [$wr, $wc] = seat_rc($want); $zg = zone_g($wr, $wc);
-            if ($gd && $gd !== $zg) out(409, ['error' => 'gender', 'msg' => 'هذا الكرسي مخصّص ' . g_lbl($zg) . ' فقط']);
+            if ($gd && $gd !== $zg && empty($GLOBALS['VIPOFF'])) out(409, ['error' => 'gender', 'msg' => 'هذا الكرسي مخصّص ' . g_lbl($zg) . ' فقط']);
             $seat = $want; $cat = cat_of_seat($want); $gd = $zg;
         }
         if (!$seat) {
-            if (!$gd) out(400, ['error' => 'gd', 'msg' => 'اختار الفئة: رجال أو نساء']);
-            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (seat_ok($rr, $cc) && is_vip($rr, $cc) === ($cat === 'VIP') && zone_g($rr, $cc) === $gd && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
+            if (!$gd && empty($GLOBALS['VIPOFF'])) out(400, ['error' => 'gd', 'msg' => 'اختار الفئة: رجال أو نساء']);
+            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (seat_ok($rr, $cc) && is_vip($rr, $cc) === ($cat === 'VIP') && (!empty($GLOBALS['VIPOFF']) || zone_g($rr, $cc) === $gd) && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
         }
         if (!$seat) out(409, ['error' => 'full', 'msg' => 'ماكو مقاعد فارغة بهذي الفئة (' . ($cat === 'VIP' ? 'VIP' : 'عادي') . ' ' . ($gd === 'm' ? 'رجال' : 'نساء') . ')']);
         if (!$g) { $gid = 'g' . rid(5); $S['guests'][$gid] = ['n' => mb_substr($name, 0, 80), 'c' => $cat, 's' => null]; }
