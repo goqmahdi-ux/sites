@@ -148,12 +148,13 @@ function target_admin(array $S, array $me): ?string {
     if ($sup && isset($S['users'][$sup]) && $S['users'][$sup]['role'] === 'admin') return $sup;
     return admins($S)[0] ?? null;
 }
-function add_name_job(array &$S, array $me, string $n, string $j): array {
+function add_name_job(array &$S, array $me, string $n, string $j, bool $num = false): array {
     $to = target_admin($S, $me);
     $S['jobSeq']++;
     $x = ['id' => $S['jobSeq'], 'n' => $n, 'j' => $j, 'w' => 50, 'h' => 30, 'sec' => 'ستكر', 'lbl' => 'اسم', 'r' => 0, 'seat' => '',
         't' => now_ms(), 'by' => $me['uid'], 'byName' => $me['name'], 'to' => $to,
         'toName' => $to ? $S['users'][$to]['name'] : '', 'st' => 'new', 'kind' => 'name', 'claimed' => 'queue'];
+    if ($num) { $x['num'] = 1; $x['lbl'] = 'رقم'; }
     $S['jobs'][] = $x;
     if (count($S['jobs']) > 600) $S['jobs'] = array_slice($S['jobs'], -600);
     return $x;
@@ -926,6 +927,10 @@ switch ($r) {
         $jobs = is_array($b['jobs'] ?? null) ? $b['jobs'] : [];
         $Q = !empty($b['queue']) && $on; $qn = 0;
         $jq = function ($n, $j) use (&$S, $me, &$qn) { $j = trim((string)$j); add_name_job($S, $me, (string)$n, $j !== '' ? $j : 'منظم'); $qn++; };
+        if ($Q && !empty($b['nums']) && is_array($b['nums'])) {
+            foreach (array_slice($b['nums'], 0, 500) as $x) { $x = mb_substr(trim((string)$x), 0, 12); if ($x === '') continue; add_name_job($S, $me, $x, '', true); $qn++; }
+            save($S); out(200, array_merge(['ok' => true, 'queued' => $qn], org_res_for($S, $me)));
+        }
         if (!empty($b['test'])) { $jq('ستكر تجريبي', 'منظم'); save($S); out(200, array_merge(['ok' => true, 'queued' => $qn], org_res_for($S, $me))); }
         foreach (array_slice((array)($b['ids'] ?? []), 0, 500) as $id) {
             $id = (string)$id;
