@@ -200,6 +200,11 @@ kbd{font:600 12px Inter;border:1px solid var(--line);border-bottom-width:2px;bor
 .vbox video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
 .vbox .vplay{position:absolute;inset:0;margin:auto;width:min(110px,30%);aspect-ratio:1;height:auto;border-radius:50%;border:3px solid #fff;background:#3b4fae;color:#fff;font-size:clamp(22px,3vw,44px);display:grid;place-items:center;box-shadow:0 10px 40px #000a;cursor:pointer;padding-inline-start:6px}
 .vbox.playing .vplay{display:none}
+.durpick{margin:6px auto 22px;text-align:center}.durpick .dlab{color:var(--mute);font-size:15px;margin-bottom:10px}
+.drow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.dch{min-height:56px;min-width:130px;border-radius:14px;border:2px solid #ffffff55;background:#ffffff1a;color:#fff;font:600 19px "IBM Plex Sans Arabic";padding:0 18px;cursor:pointer;transition:.15s}
+.dch:hover{border-color:#fff}.dch.on{background:#fff;color:#3b4fae;border-color:#fff}
+#startBtn:disabled{opacity:.55;cursor:not-allowed}
 </style>
 
 </head>
@@ -229,12 +234,13 @@ kbd{font:600 12px Inter;border:1px solid var(--line);border-bottom-width:2px;bor
     <h2 id="rWho"></h2>
     <p class="ttl lat" id="rTtl"></p>
     <div class="sp" id="rSp"></div>
+    <div class="durpick" id="rOpts"><div class="dlab">اختار مدة العرض</div><div class="drow"><button class="dch" data-m="15">ربع ساعة</button><button class="dch" data-m="30">نص ساعة</button><button class="dch" data-m="60">ساعة</button></div></div>
     <div class="row">
       <button class="btn pri" id="startBtn">ابدأ العرض</button>
       <button class="btn" id="backBtn">رجوع</button>
     </div>
     <div class="loadbar hide" id="rLoad"><i></i></div>
-    <div class="opts" id="rOpts"><span id="rDur"></span></div>
+    
     <div class="note hide" id="rNote"></div>
   </div>
 </section>
@@ -394,11 +400,13 @@ async function getSlides(t,onp){
   return cache[k]=s}
 
 // ---------- ready ----------
-let cur=null,curSlides=[],curVids=[];
+let cur=null,curSlides=[],curVids=[],pickDur=null,slidesReady=false;
+function updStart(){const sb=$('startBtn');if(!slidesReady)return;sb.disabled=!pickDur;sb.textContent=pickDur?'ابدأ العرض':'اختار المدة أولاً';if(pickDur)sb.focus()}
+document.addEventListener('click',e=>{const b=e.target.closest('.dch');if(!b)return;pickDur=+b.dataset.m;document.querySelectorAll('.dch').forEach(x=>x.classList.toggle('on',x===b));updStart()});
 async function openReady(id){const t=talks().find(x=>x.id===id);if(!t)return;cur=t;curSlides=[];curVids=t.file?[]:(t.vids||[]);
   const pos=visible().findIndex(x=>x.id===id)+1;
   $('rNum').textContent='المتحدث رقم '+pos;$('rWho').textContent=t.ar;$('rTtl').textContent=t.t||'';$('rSp').textContent=[t.who,t.sp].filter(Boolean).join(' — ');
-  $('rDur').textContent='مدة العرض: '+durLabel(tDur(t));
+  pickDur=null;document.querySelectorAll('.dch').forEach(b=>b.classList.remove('on'));slidesReady=false;
   $('rNote').textContent=t.note&&!t.file?t.note:'';$('rNote').classList.toggle('hide',!(t.note&&!t.file));
   $('lobby').classList.add('hide');$('ready').classList.remove('hide');
   const sb=$('startBtn');sb.disabled=true;sb.textContent='جاري تحميل العرض…';
@@ -407,7 +415,7 @@ async function openReady(id){const t=talks().find(x=>x.id===id);if(!t)return;cur
     if(cur!==t)return;
     if(!curSlides.length)throw 0;
     curSlides.slice(0,3).forEach(s=>{const im=new Image();im.src=s});
-    sb.disabled=false;sb.textContent='ابدأ العرض';sb.focus();
+    slidesReady=true;updStart();
   }catch(e){if(cur===t){sb.textContent='ما يوجد ملف عرض لهذا البحث';$('rNote').textContent='الإدارة تكدر ترفع الملف من لوحة الإدارة.';$('rNote').classList.remove('hide')}}
   lb.classList.add('hide');
 }
@@ -458,7 +466,7 @@ function placeVideos(){const L=$('vlay');const list=(cur&&curVids[idx])||[];
   L.style.cssText=`display:block;left:${box.left+(box.width-w)/2}px;top:${box.top+(box.height-h)/2}px;width:${w}px;height:${h}px`;
   if(im&&!im.complete)im.addEventListener('load',placeVideos,{once:true})}
 function toggleVideo(){const v=$('vlay').querySelector('video');if(!v)return;v.paused?v.play().catch(()=>{}):v.pause()}
-function start(){const t=cur;total=Math.round(tDur(t)*60);elapsed=0;idx=-1;running=false;thanked=false;
+function start(){const t=cur;if(!pickDur)return;total=Math.round(pickDur*60);elapsed=0;idx=-1;running=false;thanked=false;
   $('thanks').classList.add('hide');
   $('iNum').textContent=$('rNum').textContent;$('iWho').textContent=t.ar;$('iTtl').textContent=t.t||'';$('iSp').textContent=t.who||'';
   $('intro').classList.remove('hide');$('intro').style.opacity=1;$('slide').innerHTML='';$('vlay').innerHTML='';$('vlay').dataset.k='';$('vlay').style.display='none';
