@@ -442,7 +442,7 @@ function card(t,i){return `<button class="res ${t.done?'done':''}" data-id="${es
 let HALL=+store.get('isc-hall',1)||1,EDIT=false,pinFor='';
 const sessOf=t=>SESS.find(s=>s.k===t.s)||SESS.find(s=>s.k==='x');
 const hallAr=n=>(HALLS.find(h=>h.n===n)||{}).ar||'';
-function chairsHtml(c){if(!c)return'';if(/^Moderator/.test(c))return `<div class="chairs lat"><b>${esc(c)}</b></div>`;const p=c.split(' · ');return `<div class="chairs lat"><span><b>Chair:</b> ${esc(p[0])}</span>${p.length>1?`<span><b>Co-Chair:</b> ${esc(p.slice(1).join(' · '))}</span>`:''}</div>`}
+function chairsHtml(c){if(!c)return'';if(/^Moderator/.test(c))return `<div class="chairs lat"><b>${esc(c)}</b></div>`;const p=c.split(' · ');return `<div class="chairs lat"><span><b>Chair:</b> ${esc(p[0])}</span>${p.length>1?`<span><b>Co-Chairs:</b> ${esc(p.slice(1).join(' · '))}</span>`:''}</div>`}
 function renderHalls(){$('halls').innerHTML=HALLS.map(h=>`<button class="hall ${h.n>3?'sm':''} ${h.n===HALL?'on':''}" data-h="${h.n}"><b>${esc(h.ar)}</b><small class="lat">${esc(h.en.split(' – ')[0])}</small></button>`).join('')}
 document.addEventListener('click',e=>{const b=e.target.closest('.hall');if(!b)return;HALL=+b.dataset.h;store.set('isc-hall',HALL);renderLobby()});
 function erow(t,i,arr){return `<div class="erow" data-id="${esc(t.id)}"><div class="th" style="background-image:url('${thumb(t)}')"></div>
