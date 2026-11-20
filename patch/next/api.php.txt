@@ -51,7 +51,7 @@ function load(): array {
     $set = array_merge($b['settings'], (array)($s['settings'] ?? []));
     $s = array_merge($b, $s);
     $s['settings'] = $set;
-    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform', 'votes', 'teams', 'wa', 'npx'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
+    foreach (['seats', 'guests', 'users', 'sessions', 'fails', 'orgs', 'ofails', 'oform', 'votes', 'teams', 'wa', 'npx', 'att', 'arate'] as $k) if (!is_array($s[$k] ?? null)) $s[$k] = [];
     if (!is_array($s['settings']['zone'] ?? null)) $s['settings']['zone'] = $b['settings']['zone'];
     // قياس الستكر صار 30×25 ملم (مرة وحدة، بعدها يكدر الأدمن يغيره من الإعدادات)
     if ((int)($s['settings']['szv'] ?? 0) < 2) { $s['settings']['stickerW'] = 30; $s['settings']['stickerH'] = 25; $s['settings']['szv'] = 2; }
@@ -221,6 +221,7 @@ function public_state(array $S, array $me): array {
         'me' => ['name' => $me['name'], 'role' => $me['role'], 'id' => $me['uid'], 'perms' => $me['perms'],
             'task' => $me['task'], 'sup' => $me['sup'], 'supName' => ($me['sup'] && isset($S['users'][$me['sup']])) ? $S['users'][$me['sup']]['name'] : '']];
     if ($me['role'] === 'admin') {
+        $st['attN'] = count($S['att'] ?? []);
         $st['users'] = users_public($S);
         $st['jobs'] = array_slice($S['jobs'], -300);
     } else {
@@ -535,6 +536,39 @@ if ($r === 'org-form') {
     out(200, ['ok' => true, 'status' => 'new', 'name' => explode(' ', $name)[0], 'shift' => $o['shift']]);
 }
 
+/* ----- تسجيل الحضور بالرابط (بدون دخول) ----- */
+if ($r === 'att-form') {
+    $ip = client_ip(); $now = time();
+    $f = $S['arate'][$ip] ?? [0, $now];
+    if ($now - $f[1] > 3600) $f = [0, $now];
+    if ($f[0] >= 300) out(429, ['error' => 'wait', 'msg' => 'محاولات كثيرة من هذا الجهاز، حاول بعد قليل']);
+    $f[0]++; $S['arate'][$ip] = $f;
+    foreach ($S['arate'] as $k => $x) if ($now - ($x[1] ?? 0) > 7200) unset($S['arate'][$k]);
+    $name = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['n'] ?? ''))), 0, 80);
+    $gd = in_array($b['gd'] ?? '', ['m', 'f'], true) ? $b['gd'] : '';
+    $ph = norm_ph((string)($b['ph'] ?? ''));
+    $org = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['org'] ?? ''))), 0, 80);
+    if (count(explode(' ', $name)) < 2 || mb_strlen($name) < 5) { save($S, false); out(400, ['error' => 'n', 'msg' => 'اكتب الاسم الثلاثي']); }
+    if ($gd === '') { save($S, false); out(400, ['error' => 'gd', 'msg' => 'اختر: رجل أو امرأة']); }
+    if ($ph !== '' && !preg_match('/^07\d{9}$/', $ph)) { save($S, false); out(400, ['error' => 'ph', 'msg' => 'رقم الهاتف غير صحيح، مثل 07701234567 (أو اتركه فارغاً)']); }
+    $nn = nname($name);
+    foreach ($S['att'] as $x) if (nname($x['n'] ?? '') === $nn && ($ph === '' || ($x['ph'] ?? '') === '' || ($x['ph'] ?? '') === $ph)) { save($S, false); out(200, ['ok' => true, 'again' => true, 'name' => explode(' ', $name)[0]]); }
+    $id = 'a' . rid(4); $k = rid(6);
+    $S['att'][] = ['id' => $id, 'n' => $name, 'gd' => $gd, 'ph' => $ph, 'org' => $org, 't' => now_ms(), 'k' => $k];
+    if (count($S['att']) > 5000) $S['att'] = array_slice($S['att'], -5000);
+    save($S);
+    out(200, ['ok' => true, 'name' => explode(' ', $name)[0], 'id' => $id, 'k' => $k]);
+}
+if ($r === 'att-undo') {
+    // الي سجّل يكدر يتراجع خلال 15 دقيقة (إذا غلط بالاسم)
+    $id = (string)($b['id'] ?? ''); $k = (string)($b['k'] ?? ''); $ok = false;
+    foreach ($S['att'] as $i => $x) if (($x['id'] ?? '') === $id && $k !== '' && hash_equals((string)($x['k'] ?? ''), $k) && now_ms() - (int)($x['t'] ?? 0) < 900000) { unset($S['att'][$i]); $ok = true; }
+    if (!$ok) { save($S, false); out(404, ['error' => 'nf', 'msg' => 'ما ينفع التراجع هسه']); }
+    $S['att'] = array_values($S['att']);
+    save($S);
+    out(200, ['ok' => true]);
+}
+
 /* ----- organizer check-in (no login, must be inside the venue zone) ----- */
 if ($r === 'org-checkin') {
     $ip = client_ip();
@@ -778,6 +812,17 @@ switch ($r) {
         if ($u['role'] === 'admin' && count(admins($S)) <= 1) out(400, ['error' => 'last', 'msg' => 'لازم يبقى مدير واحد على الأقل']);
         remove_user($S, $uid);
         done($S, $me);
+    }
+    case 'att/list': {
+        if (!$admin && !can($me, 'guests') && !can($me, 'checkin')) deny();
+        out(200, ['ok' => true, 'att' => array_map(fn($x) => array_diff_key($x, ['k' => 1]), array_values($S['att'] ?? [])), 'title' => $S['settings']['title']]);
+    }
+    case 'att/delete': {
+        if (!$admin) deny();
+        $id = (string)($b['id'] ?? '');
+        $S['att'] = array_values(array_filter($S['att'] ?? [], fn($x) => ($x['id'] ?? '') !== $id));
+        save($S);
+        out(200, ['ok' => true, 'att' => array_map(fn($x) => array_diff_key($x, ['k' => 1]), $S['att'])]);
     }
     case 'orgs/list': {
         if (!$admin && !can($me, 'orgs')) deny();
