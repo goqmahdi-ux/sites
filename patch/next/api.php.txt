@@ -668,7 +668,9 @@ switch ($r) {
         }
         if (!$seat) {
             if (!$gd && empty($GLOBALS['VIPOFF'])) out(400, ['error' => 'gd', 'msg' => 'اختار الفئة: رجال أو نساء']);
-            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (seat_ok($rr, $cc) && is_vip($rr, $cc) === ($cat === 'VIP') && (!empty($GLOBALS['VIPOFF']) || zone_g($rr, $cc) === $gd) && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
+            $sec = (!empty($GLOBALS['VIPOFF']) && in_array($b['sec'] ?? '', ['A', 'B', 'C'], true)) ? $b['sec'] : '';
+            for ($rr = 1; $rr <= ROWS && !$seat; $rr++) for ($cc = 1; $cc <= COLS; $cc++) { $sid = "R$rr-$cc"; if (seat_ok($rr, $cc) && is_vip($rr, $cc) === ($cat === 'VIP') && (!empty($GLOBALS['VIPOFF']) || zone_g($rr, $cc) === $gd) && ($sec === '' || 'ABC'[intdiv($cc - 1, 10)] === $sec) && !isset($S['seats'][$sid])) { $seat = $sid; break; } }
+            if (!$seat && $sec !== '') out(409, ['error' => 'full', 'msg' => 'القسم ' . $sec . ' مليان، اختار قسم ثاني']);
         }
         if (!$seat) out(409, ['error' => 'full', 'msg' => 'ماكو مقاعد فارغة بهذي الفئة (' . ($cat === 'VIP' ? 'VIP' : 'عادي') . ' ' . ($gd === 'm' ? 'رجال' : 'نساء') . ')']);
         if (!$g) { $gid = 'g' . rid(5); $S['guests'][$gid] = ['n' => mb_substr($name, 0, 80), 'c' => $cat, 's' => null]; }
