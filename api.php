@@ -98,6 +98,7 @@ function sanitize_talk(array $p): array {
     if (array_key_exists('al', $p)) $o['al'] = array_values(array_slice(array_map(fn($x) => clean_str($x, 80), array_filter((array)$p['al'], 'is_string')), 0, 12));
     if (array_key_exists('dur', $p)) $o['dur'] = ($p['dur'] === null || $p['dur'] === '') ? null : max(0.05, min(120, (float)$p['dur']));
     foreach (['hidden', 'done', 'custom', 'deleted'] as $k) if (array_key_exists($k, $p)) $o[$k] = (bool)$p[$k];
+    if (array_key_exists('s', $p) && preg_match('/^[a-z0-9]{1,8}$/', (string)$p['s'])) $o['s'] = (string)$p['s'];
     if (array_key_exists('order', $p)) $o['order'] = (float)$p['order'];
     if (array_key_exists('doneAt', $p)) $o['doneAt'] = (int)$p['doneAt'];
     if (array_key_exists('file', $p)) {
