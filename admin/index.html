@@ -446,7 +446,7 @@ function erow(t,i,arr){return `<div class="erow" data-id="${esc(t.id)}"><div cla
   <div class="ectl"><select class="esel">${SESS.map(s=>`<option value="${s.k}" ${sessOf(t).k===s.k?'selected':''}>${esc(hallAr(s.hall))} · ${esc(s.sh)}${s.time?' ('+esc(s.time.replace(/ /g,''))+')':''}</option>`).join('')}</select>
   <div class="earr"><button class="eup" ${i===0?'disabled':''} title="فوك">▲</button><button class="edn" ${i===arr.length-1?'disabled':''} title="جوه">▼</button></div></div></div>`}
 function renderLobby(){
-  const q=$('q').value.trim();const list=visible().filter(t=>nSlides(t));
+  const q=$('q').value.trim();const list=visible();
   $('editBtn').textContent=EDIT?'✓ خلصت التعديل':'ترتيب البحوث والقاعات';$('lobby').classList.toggle('editing',EDIT);
   if(EDIT||toks(q).join('').length<2){$('results').innerHTML='';renderHalls();$('halls').classList.remove('hide');
     const hl=HALLS.find(h=>h.n===HALL);
@@ -462,7 +462,7 @@ document.addEventListener('change',e=>{const s=e.target.closest('.esel');if(!s)r
   const ord=talks().filter(t=>sessOf(t).k===s.value).reduce((m,t)=>Math.max(m,t.order??0),0)+1;
   const tgt=SESS.find(x=>x.k===s.value);saveOV(id,{s:s.value,order:ord});if(tgt&&tgt.hall&&tgt.hall!==HALL){HALL=tgt.hall;store.set('isc-hall',HALL);renderLobby()}});
 document.addEventListener('click',e=>{const b=e.target.closest('.eup,.edn');if(!b)return;const id=b.closest('.erow').dataset.id;
-  const all=talks(),t=all.find(x=>x.id===id),grp=all.filter(x=>nSlides(x)&&!x.hidden&&sessOf(x).k===sessOf(t).k),i=grp.indexOf(t),j=i+(b.classList.contains('eup')?-1:1);if(j<0||j>=grp.length)return;
+  const all=talks(),t=all.find(x=>x.id===id),grp=all.filter(x=>!x.hidden&&sessOf(x).k===sessOf(t).k),i=grp.indexOf(t),j=i+(b.classList.contains('eup')?-1:1);if(j<0||j>=grp.length)return;
   const o=grp.map((x,k)=>x.order??k);const a=grp[i],c=grp[j];let oa=o[j],oc=o[i];if(oa===oc){oa=oc+(j>i?0.5:-0.5)}
   OV[c.id]={...(OV[c.id]||{}),order:oc};saveOV(a.id,{order:oa});api('talk',{id:c.id,patch:{order:oc}}).catch(e=>toastA(e.message))});
 setTimeout(()=>{if($('q').value&&!document.activeElement.isSameNode($('q'))){$('q').value='';renderLobby()}},800);
