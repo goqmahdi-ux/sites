@@ -5474,7 +5474,7 @@ const st=document.createElement('style');st.textContent=`
 #orgM .bigPin{font-size:40px;font-weight:700;letter-spacing:.18em;text-align:center;color:#1f7a4a;background:#e3f4ea;border-radius:14px;padding:10px;margin:6px 0 4px;direction:ltr}
 #orgM .err{color:#b3261e;font-size:13px;min-height:18px;margin-top:6px}#orgM .note{font-size:12.5px;color:#8a7f78;line-height:1.6}
 #orgM .tg{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}#orgM .tg button{font:inherit;font-size:12.5px;padding:6px 10px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff;cursor:pointer}#orgM .tg button.on{background:#f6eef2;border-color:#5a1238;color:#5a1238;font-weight:700}
-.orgDrawer{margin:0 0 14px} #orgP.lim #opAdd,#orgP.lim #opZone,#orgP.lim #opVote,#orgP.lim #opLink,#orgP.lim #opWa,#orgP.lim #opCsv,#orgP.lim #opBk,#orgP.lim [data-a=acc],#orgP.lim [data-a=edit],#orgP.lim .ocF .pin,#orgP.lim .ocF .rl,#teamP.lim [data-a],#teamP.lim #tpNew{display:none!important} #orgFab{position:fixed;left:14px;bottom:14px;z-index:60;display:none;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;border:0;background:#5a1238;color:#fff;font:700 15px 'Plex',sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer} #orgFab.on{display:flex} .nmCk{display:flex!important;align-items:center;gap:8px;font-weight:600;margin:2px 0 8px}.nmCk input{width:18px;height:18px} .nmSz{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.nmSz .btn{padding:5px 10px;font-size:13px;direction:ltr} .nmPv{display:flex;justify-content:center;background:#f4f1ee;border-radius:12px;padding:12px;margin:4px 0 6px}.nmPv canvas{width:100%;max-width:340px;height:auto;background:#fff;border:1px solid #d6cfc8;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.orgDrawer{margin:0 0 14px} #orgP.lim #opAdd,#orgP.lim #opZone,#orgP.lim #opVote,#orgP.lim #opLink,#orgP.lim #opWa,#orgP.lim #opCsv,#orgP.lim #opBk,#orgP.lim [data-a=acc],#orgP.lim [data-a=edit],#orgP.lim .ocF .pin,#orgP.lim .ocF .rl,#teamP.lim [data-a],#teamP.lim #tpNew{display:none!important} #orgFab{position:fixed;left:14px;bottom:14px;z-index:60;display:none;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;border:0;background:#5a1238;color:#fff;font:700 15px 'Plex',sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer} #orgFab.on{display:flex} .nmL{max-height:38vh;overflow:auto;border:1px solid #ece6e0;border-radius:12px;margin:4px 0 10px}.nmR{display:grid;grid-template-columns:1.2fr 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid #f2ede8}.nmR:last-child{border-bottom:0}.nmN b{display:block;font-size:14px}.nmN small{color:#8a7f78;font-size:12px}.nmR .inp{padding:8px 10px;font-size:14px}.nmR .btn{padding:7px 14px;font-size:13px} @media(max-width:600px){.nmR{grid-template-columns:1fr auto}.nmR .nmJ{grid-column:1/-1;grid-row:2}} .nmSz{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.nmSz .btn{padding:5px 10px;font-size:13px;direction:ltr} .nmPv{display:flex;justify-content:center;background:#f4f1ee;border-radius:12px;padding:12px;margin:4px 0 6px}.nmPv canvas{width:100%;max-width:340px;height:auto;background:#fff;border:1px solid #d6cfc8;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 @media(max-width:600px){#orgP .opTop h2{font-size:19px}#orgP .opList{grid-template-columns:1fr;padding:4px 12px 30px}#orgM .g2,#orgM .pre{grid-template-columns:1fr}}`;
 document.head.appendChild(st);
 const P=document.createElement('div');P.id='orgP';P.setAttribute('role','dialog');P.setAttribute('aria-label','المنظمين');
@@ -5994,30 +5994,41 @@ function team(t){const n=!t;t=t?{...t,m:[...t.m],ar:tAr(t)}:{n:'',color:TCOL[(D.
   try{const j=await api('teams/save',body);apply(j);tSel=j.tid||'';closeM();toast(n?'انعمل الفريق':'انحفظ الفريق');P2.classList.add('on');const v=TAR[t.ar].v;v!==tView?tSetView(v):tRender()}catch(e){mc.querySelector('#tErr').textContent=e.message}};
 }
 $('#opTeams').onclick=()=>{P2.classList.add('on');tRender();setTimeout(()=>tCtr(tW(tView)),30)};
-function nmPrint(){const L=curL(),A=[...D.orgs].sort((a,b)=>String(a.n).localeCompare(String(b.n),'ar')),T=D.teams||[],NT=A.filter(o=>!teamOf(o.id));
- let W=+localStorage.getItem('ks-nmW')||50,H=+localStorage.getItem('ks-nmH')||30;
- const SZ=[[30,25],[40,30],[50,30],[60,40],[70,50],[100,50]];
- openM(`<h3>طباعة أسماء المنظمين</h3><div class="note">ستكر بالاسم والوظيفة. اختار منو تطبع واكتب قياس الستكر بالملم.</div>
- <label>منو تطبع<select id="nmWho"><option value="cur">القائمة الظاهرة هسه (${L.length})</option><option value="all">كل المنظمين (${A.length})</option>${T.map(t=>`<option value="t:${t.id}">${/^فريق/.test(t.n)?'':'فريق '}${esc(t.n)} (${t.m.length})</option>`).join('')}<option value="none">بدون فريق (${NT.length})</option><option value="one">اسم واحد أكتبه بإيدي</option></select></label>
- <label id="nmOneL" hidden>الاسم<input class="inp" id="nmOne" maxlength="60" placeholder="اكتب الاسم"></label>
- <label>الوظيفة على الستكر<input class="inp" id="nmJob" maxlength="40" placeholder="مثلاً: منظم، تسجيل، استعلامات" value="${esc(localStorage.getItem('ks-nmJob')||'')}"></label>
- <div class="note" style="margin-top:-4px">إذا تخليها فارغة، ينكتب لكل واحد مكانه بفريقه. وإذا تريد الاسم بس، أشّر تحت.</div>
- <label class="nmCk"><input type="checkbox" id="nmNoJob"${localStorage.getItem('ks-nmNoJob')==='1'?' checked':''}> الاسم بس، بدون وظيفة</label>
- <div class="g2"><label>العرض (ملم)<input class="inp" id="nmW" type="number" min="20" max="110" step="1" value="${W}"></label><label>الطول (ملم)<input class="inp" id="nmH" type="number" min="15" max="150" step="1" value="${H}"></label></div>
- <div class="nmSz">${SZ.map(([w,h])=>`<button type="button" class="btn secondary" data-w="${w}" data-h="${h}">${w}×${h}</button>`).join('')}</div>
- <div class="nmPv"><canvas id="nmPrev"></canvas></div><div class="note" id="nmCap"></div>
- <div class="row"><button class="btn secondary" id="nmTest">ستكر تجريبي</button><button class="btn primary" id="nmGo">اطبع</button><button class="btn secondary" id="nmX">سكّر</button></div><div class="note" id="nmProg"></div>`);
- const jobOf=o=>{const t=teamOf(o.id);return String(o.task||(t&&(t.place||t.n))||'').trim()};
- const who=()=>{const v=mc.querySelector('#nmWho').value,nj=mc.querySelector('#nmNoJob').checked,jt=mc.querySelector('#nmJob').value.trim(),J=o=>nj?'':(jt||(o?jobOf(o):''));if(v==='one'){const x=mc.querySelector('#nmOne').value.trim();return x?[{n:x,j:J(null)}]:[]}const ids=v==='cur'?L:v==='all'?A:v==='none'?NT:(()=>{const t=T.find(t=>'t:'+t.id===v);return t?t.m.map(id=>D.orgs.find(o=>o.id===id)).filter(Boolean):[]})();return ids.map(o=>({n:o.n,j:J(o)}))};
- const sz=()=>{localStorage.setItem('ks-nmJob',mc.querySelector('#nmJob').value.trim());localStorage.setItem('ks-nmNoJob',mc.querySelector('#nmNoJob').checked?'1':'0');W=Math.min(110,Math.max(20,+mc.querySelector('#nmW').value||50));H=Math.min(150,Math.max(15,+mc.querySelector('#nmH').value||30));localStorage.setItem('ks-nmW',W);localStorage.setItem('ks-nmH',H)};
- const pv=()=>{sz();const n=who(),c=mc.querySelector('#nmPrev');if(!window.__nmCanvas||!c)return;const f=n[0]||{n:'الاسم هنا',j:mc.querySelector('#nmNoJob').checked?'':(mc.querySelector('#nmJob').value.trim()||'الوظيفة')},k=window.__nmCanvas(f.n,W,H,8,f.j);c.width=k.width;c.height=k.height;c.getContext('2d').drawImage(k,0,0);c.style.aspectRatio=W+'/'+H;mc.querySelector('#nmCap').textContent=`معاينة ${W}×${H} ملم · ${n.length} اسم`;mc.querySelector('#nmGo').textContent=n.length?`اطبع ${n.length} اسم`:'اطبع'};
- mc.querySelector('#nmWho').onchange=()=>{mc.querySelector('#nmOneL').hidden=mc.querySelector('#nmWho').value!=='one';pv()};
- mc.querySelector('#nmOne').oninput=pv;mc.querySelector('#nmJob').oninput=pv;mc.querySelector('#nmNoJob').onchange=pv;mc.querySelector('#nmW').oninput=pv;mc.querySelector('#nmH').oninput=pv;
- mc.querySelectorAll('.nmSz button').forEach(b=>b.onclick=()=>{mc.querySelector('#nmW').value=b.dataset.w;mc.querySelector('#nmH').value=b.dataset.h;pv()});
- mc.querySelector('#nmX').onclick=closeM;
- const go=async(lst)=>{const pr=mc.querySelector('#nmProg');if(!lst.length){pr.textContent='ماكو أسماء للطباعة';return}sz();pr.textContent='جاري الطباعة…';const r=await window.__nmPrint(lst,W,H,(i,n)=>pr.textContent=`جاري الطباعة ${i} من ${n}…`);pr.textContent=r.status===200?(r.via==='usb'?`انطبع ${r.done} ستكر على طابعة الستكرات`:`انفتحت نافذة الطباعة (${r.done} اسم). اختار الطابعة وخلي القياس ${W}×${H} ملم`):('ما انطبع: '+(r.msg||''))};
- mc.querySelector('#nmTest').onclick=()=>go(who().slice(0,1));mc.querySelector('#nmGo').onclick=()=>go(who());
- pv();setTimeout(pv,300)}
+function nmPrint(){const W=50,H=30,T=D.teams||[];let who='cur',busy=false;
+ const byN=(a,b)=>String(a.n).localeCompare(String(b.n),'ar');
+ const jobOf=o=>{const t=teamOf(o.id);return String((o.np&&o.np.j)||o.task||(t&&(t.place||t.n))||'منظم').trim()};
+ const JOB={};const jv=o=>(JOB[o.id]!=null?JOB[o.id]:jobOf(o)).trim()||'منظم';
+ const base=w=>{const A=[...D.orgs].sort(byN);if(w==='cur')return curL();if(w==='all')return A;if(w==='none')return A.filter(o=>!teamOf(o.id));if(w==='done')return A.filter(o=>o.np).sort((a,b)=>b.np.t-a.np.t);const t=T.find(t=>'t:'+t.id===w);return t?t.m.map(id=>D.orgs.find(o=>o.id===id)).filter(Boolean):[]};
+ const left=w=>w==='done'?base(w):base(w).filter(o=>!o.np);
+ const dt=t=>{const d=new Date(t),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
+ openM(`<h3>ستكر الاسم والوظيفة</h3><div class="note">القياس ثابت ${W}×${H} ملم. الي ينطبع ينشال من القائمة، وتلكاه بـ«الي انطبعوا».</div>
+ <label>منو تطبع<select id="nmWho"></select></label>
+ <div class="nmPv"><canvas id="nmPrev"></canvas></div>
+ <div class="nmL" id="nmL"></div>
+ <div class="row"><button class="btn primary" id="nmGo">اطبع الكل</button><button class="btn secondary" id="nmXls">تقرير Excel بالي انطبعوا</button><button class="btn secondary" id="nmX">سكّر</button></div><div class="note" id="nmProg"></div>`);
+ const $m=s=>mc.querySelector(s);
+ const pv=o=>{const c=$m('#nmPrev');if(!c||!window.__nmCanvas)return;const k=window.__nmCanvas(o?o.n:'اسم المتطوع',W,H,8,o?jv(o):'الوظيفة');c.width=k.width;c.height=k.height;c.getContext('2d').drawImage(k,0,0);c.style.aspectRatio=W+'/'+H};
+ const opts=()=>{const n=w=>left(w).length,dn=D.orgs.filter(o=>o.np).length;$m('#nmWho').innerHTML=`<option value="cur">القائمة الظاهرة هسه (${n('cur')})</option><option value="all">كل المنظمين (${n('all')})</option>${T.map(t=>`<option value="t:${t.id}">${/^فريق/.test(t.n)?'':'فريق '}${esc(t.n)} (${n('t:'+t.id)})</option>`).join('')}<option value="none">بدون فريق (${n('none')})</option><option value="done">الي انطبعوا (${dn})</option>`;$m('#nmWho').value=who};
+ const draw=()=>{opts();const L=left(who),dn=who==='done';$m('#nmL').innerHTML=L.length?L.map(o=>{const t=teamOf(o.id);return`<div class="nmR" data-id="${o.id}"><div class="nmN"><b>${esc(o.n)}</b><small>${dn?`انطبع ${esc(dt(o.np.t))} · ${esc(o.np.by||'')}`:esc(t?t.n:'بدون فريق')}</small></div><input class="inp nmJ" maxlength="40" value="${esc(jv(o))}" placeholder="الوظيفة"><button class="btn ${dn?'secondary':'primary'}" data-p="1">${dn?'إعادة':'اطبع'}</button></div>`}).join(''):`<div class="empty" style="padding:18px">${dn?'بعد ما انطبع أحد':'كلهم انطبعوا بهذي القائمة'}</div>`;
+  $m('#nmGo').textContent=dn?'إعادة طباعة الكل':(L.length?`اطبع الكل (${L.length})`:'اطبع الكل');$m('#nmGo').disabled=!L.length;pv(L[0])};
+ const pr=async L=>{if(busy||!L.length)return;busy=true;const p=$m('#nmProg');p.textContent='جاري الطباعة…';
+  const r=await window.__nmPrint(L.map(o=>({n:o.n,j:jv(o)})),W,H,(i,n)=>p.textContent=`جاري الطباعة ${i} من ${n}…`);
+  if(r.status!==200){p.textContent='ما انطبع: '+(r.msg||'');busy=false;return}
+  const ids=(r.via==='usb'?L.slice(0,r.done):L).map(o=>o.id),jobs={};ids.forEach(id=>{const o=D.orgs.find(x=>x.id===id);jobs[id]=jv(o)});
+  try{const j=await api('orgs/np',{ids,jobs});apply(j);p.textContent=r.via==='usb'?`انطبع ${ids.length} ستكر وانشالوا من القائمة`:`انفتحت نافذة الطباعة (${ids.length}). اختار الطابعة وقياس ${W}×${H} ملم`}catch(e){p.textContent='انطبع بس ما انحفظ: '+e.message}
+  busy=false;if(M.classList.contains('on'))draw()};
+ $m('#nmWho').onchange=e=>{who=e.target.value;draw()};
+ $m('#nmL').addEventListener('input',e=>{const r=e.target.closest('.nmR');if(!r)return;JOB[r.dataset.id]=e.target.value;pv(D.orgs.find(o=>o.id===r.dataset.id))});
+ $m('#nmL').addEventListener('focusin',e=>{const r=e.target.closest('.nmR');r&&pv(D.orgs.find(o=>o.id===r.dataset.id))});
+ $m('#nmL').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;const o=D.orgs.find(x=>x.id===b.closest('.nmR').dataset.id);o&&pr([o])});
+ $m('#nmGo').onclick=()=>pr(left(who));
+ $m('#nmX').onclick=closeM;
+ $m('#nmXls').onclick=()=>{const P=D.orgs.filter(o=>o.np).sort((a,b)=>a.np.t-b.np.t);if(!P.length){$m('#nmProg').textContent='بعد ما انطبع أحد';return}
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',Hh=['ت','الاسم','الوظيفة','الفريق','الهاتف','الجنس','وقت الطباعة','طبعه','مرات الطباعة'];
+  const rows=P.map((o,i)=>{const t=teamOf(o.id);return[i+1,o.n,o.np.j||'',t?t.n:'',o.ph||'',o.g==='m'?'ذكر':'أنثى',dt(o.np.t),o.np.by||'',o.np.c||1]});
+  const blob=new Blob(['﻿'+[Hh,...rows].map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ستكرات-المنظمين-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);$m('#nmProg').textContent=`نزل التقرير: ${P.length} منظم انطبعوا`};
+ draw()}
  $('#opNm').onclick=nmPrint;
  $('#opAdd').onclick=()=>edit(null);$('#opZone').onclick=zone;$('#opLink').onclick=link;$('#opWa').onclick=waQ;$('#opVote').onclick=votes;$('#opCsv').onclick=csv;$('#opBk').onclick=backup;
 /* زر بالإعدادات (للمدير) */

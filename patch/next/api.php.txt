@@ -249,6 +249,7 @@ function votes_loose(array $S): array {
     foreach ($S['votes'] as $p => $v) if (!isset($own[$p])) $out[] = ['ph' => (string)$p] + $v;
     return $out;
 }
+function org_res_for(array $S, array $me): array { $r = org_res($S); if ($me['role'] !== 'admin') { foreach ($r['orgs'] as &$o) $o['pin'] = null; unset($o); } return $r; }
 function orgs_out(array $S): array {
     $out = [];
     foreach ($S['orgs'] as $id => $x) {
@@ -738,7 +739,7 @@ switch ($r) {
     }
     case 'orgs/list': {
         if (!$admin && !can($me, 'orgs')) deny();
-        out(200, array_merge(['ok' => true], org_res($S)));
+        out(200, array_merge(['ok' => true], org_res_for($S, $me)));
     }
     case 'backup': {
         if (!$admin) deny();
@@ -905,7 +906,23 @@ switch ($r) {
         $day = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($b['day'] ?? '')) ? (string)$b['day'] : date('Y-m-d');
         if (!empty($b['on'])) { if (!isset($S['orgs'][$id]['att'][$day])) $S['orgs'][$id]['att'][$day] = ['t' => now_ms(), 'd' => null, 'by' => $me['name']]; }
         else unset($S['orgs'][$id]['att'][$day]);
-        odone($S, $me);
+        $S['users'][$me['uid']]['seen'] = time();
+        save($S);
+        out(200, array_merge(['ok' => true], org_res_for($S, $me)));
+    }
+    case 'orgs/np': {
+        if (!$admin && !can($me, 'orgs')) deny();
+        $on = !array_key_exists('on', $b) || !empty($b['on']);
+        $jobs = is_array($b['jobs'] ?? null) ? $b['jobs'] : [];
+        foreach (array_slice((array)($b['ids'] ?? []), 0, 500) as $id) {
+            $id = (string)$id;
+            if (!isset($S['orgs'][$id])) continue;
+            if ($on) $S['orgs'][$id]['np'] = ['t' => now_ms(), 'by' => $me['name'], 'j' => mb_substr(trim((string)($jobs[$id] ?? '')), 0, 60), 'c' => (int)($S['orgs'][$id]['np']['c'] ?? 0) + 1];
+            else unset($S['orgs'][$id]['np']);
+        }
+        $S['users'][$me['uid']]['seen'] = time();
+        save($S);
+        out(200, array_merge(['ok' => true], org_res_for($S, $me)));
     }
     case 'zone/set': {
         if (!$admin) deny();
