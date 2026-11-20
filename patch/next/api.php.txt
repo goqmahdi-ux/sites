@@ -155,6 +155,17 @@ function pr_mark(string $uid): void {
 function printer_admins(array $S): array {
     $a = []; $now = time();
     foreach (pr_list() as $u => $t) if ($now - (int)$t < 45 && isset($S['users'][$u]) && $S['users'][$u]['role'] === 'admin') $a[$u] = (int)$t;
+    if (!$a) {
+        // ما بلّغ أي جهاز بعد: ناخذ الأدمن الي جهازه طبع ستكرات بآخر 10 دقايق
+        $byName = [];
+        foreach ($S['users'] as $u => $x) if ($x['role'] === 'admin') $byName[$x['name']] = $u;
+        foreach ($S['jobs'] as $j) {
+            $pt = (int)(($j['pt'] ?? 0) / 1000);
+            if ($pt < $now - 600 || (empty($j['pd']) && empty($j['cl']))) continue;
+            $u = $byName[$j['pBy'] ?? ''] ?? null;
+            if ($u && $pt > ($a[$u] ?? 0)) $a[$u] = $pt;
+        }
+    }
     arsort($a);
     return array_map('strval', array_keys($a));
 }
