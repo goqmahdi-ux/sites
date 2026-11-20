@@ -5126,12 +5126,13 @@ table{width:100%;border-collapse:collapse}thead{display:table-header-group}th{ba
 function __printReport(){let f=document.getElementById("repFrame");f&&f.remove();f=document.createElement("iframe");f.id="repFrame";f.style.cssText="position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0";document.body.appendChild(f);f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){Vt("ما انفتحت الطباعة",!0)}},400)};f.srcdoc=__repHTML()}
 /* ستكر اسم المنظم: الاسم بس، بقياس يختاره المستخدم */
 function __nmCanvas(nm,W,H,s,job){s=s||8;nm=String(nm||"").trim()||" ";job=String(job||"").trim();const c=document.createElement("canvas");c.width=Math.round(W*s);c.height=Math.round(H*s);const l=c.getContext("2d");l.fillStyle="#fff";l.fillRect(0,0,c.width,c.height);l.fillStyle="#000";l.direction="rtl";l.textAlign="center";l.textBaseline="middle";
- const pad=Math.max(1.5,Math.min(W,H)*.09),tw=(W-2*pad)*s,fit=(t,mx,wt)=>{l.font=`${wt||700} ${mx}px ${de}`;const w=l.measureText(t).width;return w>tw?mx*tw/w:mx};
- const top=pad*s,tot=(H-2*pad)*s,nh=job?tot*.68:tot,cy=top+nh*(job?.45:.5);
- const f1=fit(nm,nh*.6),wd=nm.split(/\s+/);
- if(wd.length>1&&f1<nh*.36){let b=null;for(let i=1;i<wd.length;i++){const a=wd.slice(0,i).join(" "),z=wd.slice(i).join(" "),f=Math.min(fit(a,nh*(job?.35:.42)),fit(z,nh*(job?.35:.42)));if(!b||f>b.f)b={a,z,f}}l.font=`700 ${b.f}px ${de}`;const g=b.f*.6;l.fillText(b.a,c.width/2,cy-g);l.fillText(b.z,c.width/2,cy+g)}
- else{l.font=`700 ${f1}px ${de}`;l.fillText(nm,c.width/2,cy)}
- if(job){const jy=top+nh,jh=tot-nh;l.fillRect(c.width*.2,jy,c.width*.6,Math.max(1,.35*s));const fj=fit(job,jh*.62,600);l.font=`600 ${fj}px ${de}`;l.fillText(job,c.width/2,jy+jh*.55)}
+ const pad=Math.max(2,Math.min(W,H)*.1),tw=(W-2*pad)*s,fit=(t,mx,wt)=>{l.font=`${wt||700} ${mx}px ${de}`;const w=l.measureText(t).width;return w>tw?mx*tw/w:mx};
+ const MX=Math.min(H*.2,6)*s,JX=Math.min(H*.11,3.3)*s;
+ let L=[nm],F=fit(nm,MX);const wd=nm.split(/\s+/);
+ if(wd.length>1&&F<MX*.6){let b=null;for(let i=1;i<wd.length;i++){const a=wd.slice(0,i).join(" "),z=wd.slice(i).join(" "),f=Math.min(fit(a,MX*.85),fit(z,MX*.85));if(!b||f>b.f)b={a,z,f}}if(b.f>F){L=[b.a,b.z];F=b.f}}
+ const lh=F*1.3,nH=L.length*lh,J=job?fit(job,JX,600):0,g=1.3*s,bH=nH+(job?g*2+J*1.2:0);let y=(c.height-bH)/2;
+ l.font=`700 ${F}px ${de}`;L.forEach((t,i)=>l.fillText(t,c.width/2,y+lh*(i+.5)));
+ if(job){const ly=y+nH+g*.8;l.fillRect(c.width*.3,ly,c.width*.4,Math.max(1,.25*s));l.font=`600 ${J}px ${de}`;l.fillText(job,c.width/2,ly+g+J*.6)}
  return c}
 window.__nmCanvas=__nmCanvas;window.__usState=()=>{const L=$US.log[0];return{ok:$usOk(),info:$US.info||null,can:{usb:!!navigator.usb,ble:!!navigator.bluetooth,serial:!!navigator.serial},err:L&&!L.ok?String(L.t||""):""}};
 window.__nmPrint=async(list,W,H,onp)=>{await document.fonts.ready;list=list.map(x=>typeof x==="string"?{n:x,j:""}:x).filter(x=>String(x.n||"").trim());if(!list.length)return{status:0,msg:"ماكو أسماء"};
