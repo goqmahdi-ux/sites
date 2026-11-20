@@ -33,7 +33,7 @@ td .x{border:0;background:none;color:#c0392b;cursor:pointer;font-size:13px}
 <body><div class="wrap">
 <h1>الحضور بالرابط <b id="cnt">0</b></h1>
 <p class="sub">الأسماء الي انسجلت من رابط الفورم. تتحدث كل 10 ثواني.</p>
-<div class="bar"><input id="q" type="search" placeholder="ابحث بالاسم أو الرقم أو الجهة"><button class="btn" id="cp">نسخ رابط الفورم</button><button class="btn pr" id="xl">تنزيل Excel</button></div>
+<div class="bar"><input id="q" type="search" placeholder="ابحث بالاسم"><button class="btn" id="cp">نسخ رابط الفورم</button><button class="btn pr" id="xl">تنزيل Excel</button></div>
 <div class="stats" id="st"></div>
 <div id="out"><div class="msg">جاري التحميل…</div></div>
 </div>
@@ -49,14 +49,14 @@ async function load(){if(!tok){$('#out').innerHTML='<div class="msg">سجّل د
   A=j.att||[];draw()}catch{}}
 fetch('../api.php?r=session',{headers:{'X-Token':tok||''},cache:'no-store'}).then(r=>r.json()).then(j=>{adm=!!(j.me&&j.me.role==='admin');draw()}).catch(()=>{});
 function draw(){const q=$('#q').value.trim();const L=[...A].sort((a,b)=>b.t-a.t).filter(x=>!q||[x.n,x.ph,x.org].join(' ').includes(q));
- $('#cnt').textContent=A.length;const m=A.filter(x=>x.gd==='m').length;$('#st').innerHTML=`<span>رجال: ${m}</span><span>نساء: ${A.length-m}</span>`;
+ $('#cnt').textContent=A.length;$('#st').innerHTML='';
  if(!L.length){$('#out').innerHTML='<div class="msg">'+(A.length?'ماكو نتائج':'بعد ماكو أحد سجّل')+'</div>';return}
- $('#out').innerHTML='<table><thead><tr><th>#</th><th>الاسم</th><th></th><th>الهاتف</th><th class="org">الجهة</th><th>الوقت</th>'+(adm?'<th></th>':'')+'</tr></thead><tbody>'+L.map((x,i)=>`<tr><td>${L.length-i}</td><td class="n">${esc(x.n)}</td><td>${x.gd==='m'?'رجل':'امرأة'}</td><td class="ph">${esc(x.ph||'')}</td><td class="org">${esc(x.org||'')}</td><td class="t">${tm(x.t)}</td>${adm?`<td><button class="x" data-id="${esc(x.id)}">حذف</button></td>`:''}</tr>`).join('')+'</tbody></table>'}
+ $('#out').innerHTML='<table><thead><tr><th>#</th><th>الاسم</th><th>الوقت</th>'+(adm?'<th></th>':'')+'</tr></thead><tbody>'+L.map((x,i)=>`<tr><td>${L.length-i}</td><td class="n">${esc(x.n)}</td><td class="t">${tm(x.t)}</td>${adm?`<td><button class="x" data-id="${esc(x.id)}">حذف</button></td>`:''}</tr>`).join('')+'</tbody></table>'}
 $('#q').oninput=draw;
 $('#out').onclick=async e=>{const b=e.target.closest('.x');if(!b)return;const x=A.find(y=>y.id===b.dataset.id);if(!x||!confirm('تحذف '+x.n+' من القائمة؟'))return;
  const r=await fetch('../api.php?r=att/delete',{method:'POST',headers:H(),body:JSON.stringify({id:x.id})});const j=await r.json();if(r.ok){A=j.att||[];draw()}else alert(j.msg||'ما انحذف')};
 $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(FORM);$('#cp').textContent='انسخ ✓'}catch{prompt('انسخ الرابط:',FORM)}setTimeout(()=>$('#cp').textContent='نسخ رابط الفورم',1800)};
-$('#xl').onclick=()=>{const rows=[['#','الاسم','الجنس','الهاتف','الجهة','الوقت']].concat([...A].sort((a,b)=>a.t-b.t).map((x,i)=>[i+1,x.n,x.gd==='m'?'رجل':'امرأة',x.ph?'‎'+x.ph:'',x.org||'',tm(x.t)]));
+$('#xl').onclick=()=>{const rows=[['#','الاسم','الوقت']].concat([...A].sort((a,b)=>a.t-b.t).map((x,i)=>[i+1,x.n,tm(x.t)]));
  const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='الحضور-بالرابط.csv';a.click()};
 load();setInterval(load,10000);
 })();

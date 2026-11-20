@@ -54,12 +54,6 @@ footer{text-align:center;color:var(--mute);font-size:12px;padding:0 16px calc(18
    <p class="sub">اكتب اسمك حتى ينضاف لقائمة الحاضرين.</p>
    <label for="n">الاسم الثلاثي</label>
    <input id="n" name="n" type="text" autocomplete="name" maxlength="80" placeholder="مثلاً: زينب علي حسن" required>
-   <label>رجل أو امرأة</label>
-   <div class="seg" id="gd"><button type="button" data-v="m">رجل</button><button type="button" data-v="f">امرأة</button></div>
-   <label for="ph">رقم الهاتف <em>(اختياري)</em></label>
-   <input id="ph" name="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="07XXXXXXXXX">
-   <label for="org">الجهة أو مكان العمل <em>(اختياري)</em></label>
-   <input id="org" name="org" type="text" maxlength="80" placeholder="مثلاً: جامعة كربلاء">
    <button class="go" id="go" type="submit">سجّل الحضور</button>
    <div class="err" id="err"></div>
   </form>
@@ -76,20 +70,18 @@ footer{text-align:center;color:var(--mute);font-size:12px;padding:0 16px calc(18
 <script>
 (()=>{const $=s=>document.querySelector(s);let gd='',last=null;
 fetch('../api.php?r=session',{cache:'no-store'}).then(r=>r.json()).then(j=>{if(j&&j.title){$('#ttl').textContent=j.title}}).catch(()=>{});
-document.querySelectorAll('#gd button').forEach(b=>b.onclick=()=>{gd=b.dataset.v;document.querySelectorAll('#gd button').forEach(x=>x.classList.toggle('on',x===b))});
 const err=m=>{const e=$('#err');e.textContent=m;e.classList.toggle('on',!!m)};
 $('#f').onsubmit=async e=>{e.preventDefault();err('');
- const n=$('#n').value.replace(/\s+/g,' ').trim(),ph=$('#ph').value.trim(),org=$('#org').value.trim();
+ const n=$('#n').value.replace(/\s+/g,' ').trim(),ph='',org='';
  if(n.split(' ').length<2){err('اكتب الاسم الثلاثي');$('#n').focus();return}
- if(!gd){err('اختر: رجل أو امرأة');return}
  const b=$('#go');b.disabled=true;b.textContent='جاري التسجيل…';
  try{const r=await fetch('../api.php?r=att-form',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({n,gd,ph,org})});let j={};try{j=await r.json()}catch{}
   if(r.ok&&j.ok){last=j.id?{id:j.id,k:j.k,n,ph,org}:null;$('#undo').hidden=!last;$('#okT').textContent=j.again?`${j.name}، حضورك مسجّل من قبل`:`تم تسجيل حضور ${j.name}`;$('#okP').textContent=j.again?'اسمك موجود بقائمة الحاضرين.':'شكراً لحضوركم، الاسم صار بقائمة الحاضرين.';$('#card').classList.add('ok');window.scrollTo({top:0,behavior:'smooth'})}
   else err(j.msg||'ما تم التسجيل، حاول مرة ثانية')}
  catch{err('ماكو اتصال بالإنترنت، تأكد وحاول مرة ثانية')}
  b.disabled=false;b.textContent='سجّل الحضور'};
-$('#undo').onclick=async()=>{if(!last)return;const b=$('#undo');b.disabled=true;try{const r=await fetch('../api.php?r=att-undo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:last.id,k:last.k})});if(r.ok){const L=last;last=null;$('#card').classList.remove('ok');$('#n').value=L.n;$('#ph').value=L.ph;$('#org').value=L.org;$('#n').focus()}else{b.textContent='ما ينفع التراجع هسه'}}catch{}b.disabled=false};
-$('#again').onclick=()=>{$('#f').reset();gd='';document.querySelectorAll('#gd button').forEach(x=>x.classList.remove('on'));$('#card').classList.remove('ok');$('#n').focus()};
+$('#undo').onclick=async()=>{if(!last)return;const b=$('#undo');b.disabled=true;try{const r=await fetch('../api.php?r=att-undo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:last.id,k:last.k})});if(r.ok){const L=last;last=null;$('#card').classList.remove('ok');$('#n').value=L.n;$('#n').focus()}else{b.textContent='ما ينفع التراجع هسه'}}catch{}b.disabled=false};
+$('#again').onclick=()=>{$('#f').reset();$('#card').classList.remove('ok');$('#n').focus()};
 })();
 </script>
 </body>

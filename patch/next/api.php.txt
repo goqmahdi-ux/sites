@@ -549,7 +549,6 @@ if ($r === 'att-form') {
     $ph = norm_ph((string)($b['ph'] ?? ''));
     $org = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($b['org'] ?? ''))), 0, 80);
     if (count(explode(' ', $name)) < 2 || mb_strlen($name) < 5) { save($S, false); out(400, ['error' => 'n', 'msg' => 'اكتب الاسم الثلاثي']); }
-    if ($gd === '') { save($S, false); out(400, ['error' => 'gd', 'msg' => 'اختر: رجل أو امرأة']); }
     if ($ph !== '' && !preg_match('/^07\d{9}$/', $ph)) { save($S, false); out(400, ['error' => 'ph', 'msg' => 'رقم الهاتف غير صحيح، مثل 07701234567 (أو اتركه فارغاً)']); }
     $nn = nname($name);
     foreach ($S['att'] as $x) if (nname($x['n'] ?? '') === $nn && ($ph === '' || ($x['ph'] ?? '') === '' || ($x['ph'] ?? '') === $ph)) { save($S, false); out(200, ['ok' => true, 'again' => true, 'name' => explode(' ', $name)[0]]); }
