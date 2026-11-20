@@ -431,11 +431,11 @@ function renderLobby(){
   const q=$('q').value.trim();const list=visible();
   if(toks(q).join('').length<2){$('results').innerHTML='';renderHalls();$('halls').classList.remove('hide');
     const hl=HALLS.find(h=>h.n===HALL);
-    $('nextup').innerHTML=`<div class="hallen lat">${esc(hl.en)}</div>`+SESS.filter(s=>s.hall===HALL).map(s=>{const ts=list.filter(t=>sessOf(t).k===s.k);if(!ts.length)return'';
+    $('nextup').innerHTML=`<div class="hallen lat">${esc(hl.en)}</div>`+SESS.filter(s=>s.hall===HALL).map(s=>{const ts=list.filter(t=>sessOf(t).k===s.k&&nSlides(t));if(!ts.length)return'';
       return `<div class="sess"><div class="sh"><h3 class="lat">${esc(s.name)}</h3>${s.time?`<span class="stime">${esc(s.time)}</span>`:''}</div>${s.chairs?`<div class="chairs lat">Chairs: ${esc(s.chairs)}</div>`:''}${ts.map(card).join('')}</div>`}).join('');return}
   $('halls').classList.add('hide');$('nextup').innerHTML='';
   const q0=toks(q)[0]||'';const rank=t=>{const f=toks(t.ar)[0]||'',e=toks(t.who)[0]||'';return (f.startsWith(q0)||e.startsWith(q0))?0:1};
-  const m=list.filter(t=>matches(t,q)).sort((a,b)=>rank(a)-rank(b));
+  const m=list.filter(t=>nSlides(t)&&matches(t,q)).sort((a,b)=>rank(a)-rank(b));
   $('results').innerHTML=m.length?m.slice(0,6).map(card).join(''):`<p class="hintline">ما لكينا بحث بهذا الاسم. جرّب الاسم الأول أو اكتبه بالإنكليزي.</p>`;
 }
 $('q').addEventListener('input',renderLobby);
