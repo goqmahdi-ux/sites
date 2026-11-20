@@ -148,6 +148,16 @@ function target_admin(array $S, array $me): ?string {
     if ($sup && isset($S['users'][$sup]) && $S['users'][$sup]['role'] === 'admin') return $sup;
     return admins($S)[0] ?? null;
 }
+function add_name_job(array &$S, array $me, string $n, string $j): array {
+    $to = target_admin($S, $me);
+    $S['jobSeq']++;
+    $x = ['id' => $S['jobSeq'], 'n' => $n, 'j' => $j, 'w' => 50, 'h' => 30, 'sec' => 'ستكر', 'lbl' => 'اسم', 'r' => 0, 'seat' => '',
+        't' => now_ms(), 'by' => $me['uid'], 'byName' => $me['name'], 'to' => $to,
+        'toName' => $to ? $S['users'][$to]['name'] : '', 'st' => 'new', 'kind' => 'name', 'claimed' => 'queue'];
+    $S['jobs'][] = $x;
+    if (count($S['jobs']) > 600) $S['jobs'] = array_slice($S['jobs'], -600);
+    return $x;
+}
 function add_job(array &$S, array $me, string $sid, string $name, string $kind = 'guest'): array {
     [$r, $c] = seat_rc($sid);
     $to = target_admin($S, $me);
@@ -914,10 +924,13 @@ switch ($r) {
         if (!$admin && !can($me, 'orgs')) deny();
         $on = !array_key_exists('on', $b) || !empty($b['on']);
         $jobs = is_array($b['jobs'] ?? null) ? $b['jobs'] : [];
+        $Q = !empty($b['queue']) && $on; $qn = 0;
+        $jq = function ($n, $j) use (&$S, $me, &$qn) { $j = trim((string)$j); add_name_job($S, $me, (string)$n, $j !== '' ? $j : 'منظم'); $qn++; };
+        if (!empty($b['test'])) { $jq('ستكر تجريبي', 'منظم'); save($S); out(200, array_merge(['ok' => true, 'queued' => $qn], org_res_for($S, $me))); }
         foreach (array_slice((array)($b['ids'] ?? []), 0, 500) as $id) {
             $id = (string)$id;
             if (!isset($S['orgs'][$id])) continue;
-            if ($on) $S['orgs'][$id]['np'] = ['t' => now_ms(), 'by' => $me['name'], 'j' => mb_substr(trim((string)($jobs[$id] ?? '')), 0, 60), 'c' => (int)($S['orgs'][$id]['np']['c'] ?? 0) + 1];
+            if ($on) { $S['orgs'][$id]['np'] = ['t' => now_ms(), 'by' => $me['name'], 'j' => mb_substr(trim((string)($jobs[$id] ?? '')), 0, 60), 'c' => (int)($S['orgs'][$id]['np']['c'] ?? 0) + 1]; if ($Q) $jq($S['orgs'][$id]['n'] ?? '', $S['orgs'][$id]['np']['j']); }
             else unset($S['orgs'][$id]['np']);
         }
         if (!is_array($S['npx'] ?? null)) $S['npx'] = [];
@@ -926,13 +939,14 @@ switch ($r) {
             $n = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($m['n'] ?? ''))), 0, 80);
             if ($n === '') continue;
             $S['npx'][] = ['id' => 'm' . rid(4), 'n' => $n, 'j' => mb_substr(trim((string)($m['j'] ?? '')), 0, 60), 't' => now_ms(), 'by' => $me['name'], 'c' => 1];
+            if ($Q) $jq($n, mb_substr(trim((string)($m['j'] ?? '')), 0, 60));
         }
         $mids = array_map('strval', (array)($b['mids'] ?? []));
-        if ($mids) foreach ($S['npx'] as $i => $x) if (in_array((string)($x['id'] ?? ''), $mids, true)) { $S['npx'][$i]['t'] = now_ms(); $S['npx'][$i]['by'] = $me['name']; $S['npx'][$i]['c'] = (int)($x['c'] ?? 1) + 1; }
+        if ($mids) foreach ($S['npx'] as $i => $x) if (in_array((string)($x['id'] ?? ''), $mids, true)) { $S['npx'][$i]['t'] = now_ms(); $S['npx'][$i]['by'] = $me['name']; $S['npx'][$i]['c'] = (int)($x['c'] ?? 1) + 1; if ($Q) $jq($x['n'] ?? '', $x['j'] ?? ''); }
         if (count($S['npx']) > 3000) $S['npx'] = array_slice($S['npx'], -3000);
         $S['users'][$me['uid']]['seen'] = time();
         save($S);
-        out(200, array_merge(['ok' => true], org_res_for($S, $me)));
+        out(200, array_merge(['ok' => true, 'queued' => $qn], org_res_for($S, $me)));
     }
     case 'zone/set': {
         if (!$admin) deny();
