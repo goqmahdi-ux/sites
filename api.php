@@ -176,7 +176,7 @@ case 'live': {
     $L = (array)($B['live'] ?? []);
     $live = ['talkId' => clean_str($L['talkId'] ?? '', 40), 'name' => clean_str($L['name'] ?? '', 120), 'title' => clean_str($L['title'] ?? '', 600),
         'total' => (float)($L['total'] ?? 0), 'elapsed' => (float)($L['elapsed'] ?? 0), 'running' => (bool)($L['running'] ?? false),
-        'on' => (bool)($L['on'] ?? false), 'slide' => (int)($L['slide'] ?? 0), 'slides' => (int)($L['slides'] ?? 0), 'ended' => (bool)($L['ended'] ?? false),
+        'on' => (bool)($L['on'] ?? false), 'slide' => (int)($L['slide'] ?? 0), 'slides' => (int)($L['slides'] ?? 0), 'ended' => (bool)($L['ended'] ?? false), 'hasVideo' => (bool)($L['hasVideo'] ?? false),
         'at' => (int)round(microtime(true) * 1000)];
     $done = !empty($B['done']) ? $live['talkId'] : '';
     tx(function (&$S) use ($live, $done) {
@@ -191,7 +191,7 @@ case 'live': {
 case 'cmd': {
     $S = load(); need_auth($S, $B);
     $op = (string)($B['op'] ?? '');
-    if (!in_array($op, ['pause', 'resume', 'plus', 'thanks', 'next', 'prev', 'stop'], true)) out(400, ['error' => 'op']);
+    if (!in_array($op, ['pause', 'resume', 'plus', 'thanks', 'next', 'prev', 'stop', 'video'], true)) out(400, ['error' => 'op']);
     $cmd = ['op' => $op, 'talkId' => clean_str($B['talkId'] ?? '', 40), 'n' => (int)round(microtime(true) * 1000)];
     tx(function (&$S) use ($cmd) { $S['cmd'] = $cmd; });
     out(200, ['ok' => true, 'cmd' => $cmd]);
