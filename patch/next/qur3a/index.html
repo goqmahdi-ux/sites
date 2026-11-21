@@ -115,7 +115,7 @@ footer{display:flex;align-items:flex-end;gap:14px;min-height:0}
    <button class="tb" id="bR">تحديث</button>
    <button class="tb" id="bS">الصوت شغال</button>
    <button class="tb" id="bF">شاشة كاملة</button>
-   <button class="tb" id="bZ">تصفير</button>
+   <button class="tb" id="bZ">تصفير الفائزين</button>
   </div>
  </footer>
 </div>
@@ -132,9 +132,11 @@ footer{display:flex;align-items:flex-end;gap:14px;min-height:0}
 const $=s=>document.querySelector(s);
 const AL={"1shxdx7": 1, "i3hsgt": 1, "1v61j11": 2, "nqxaqi": 2, "151dl8h": 3, "ygjdya": 3, "rabq92": 4, "lxnvcp": 4, "1p5w1ni": 5, "18q5ypr": 5, "1341c7n": 6, "jc3kye": 6, "1qa6865": 7, "1pwqd8d": 7, "ydjynn": 8, "awibeo": 8, "18lqmld": 9, "ki16y5": 9, "iggxre": 10, "1miqww0": 10, "11q3ye5": 11, "38a55s": 11, "sqkhds": 12, "1gkbalo": 12, "19ac7cr": 13, "vf9c39": 13, "vogl0r": 14, "1sa4pqb": 14, "168yex5": 15, "177ze9r": 15, "8genzn": 16, "4g9bh5": 16},SK=new Set(["naigz5", "zhfy9n", "1oj5un3"]);
 const LS='khq-d2';
-let st={wins:[],out:[],add:[],cache:[],mute:false};
-try{st=Object.assign(st,JSON.parse(localStorage.getItem(LS)||'{}'))}catch(e){}
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify(st))}catch(e){}};
+let st={cache:[],mute:false,R:null,q:[]};
+try{const o=JSON.parse(localStorage.getItem(LS)||'{}');st=Object.assign(st,o);if(!st.R&&(o.wins||o.out))st.R={wins:o.wins||[],abs:[],out:o.out||[],add:o.add||[]}}catch(e){}
+const E=()=>({wins:[],abs:[],out:[],add:[]});
+let R=Object.assign(E(),st.R||{});
+const save=()=>{st.R=R;try{localStorage.setItem(LS,JSON.stringify({cache:st.cache,mute:st.mute,R:st.R,q:st.q}))}catch(e){}};
 let tok=null;try{tok=JSON.parse(localStorage.getItem('ks-token')||'null')}catch(e){}
 const PRE=/^(?:(?:professor|prof|dr|d|ph|الطالبه|الدكتوره|الدكتور|دكتوره|دكتور|د)\s+)+/;
 function norm(s){s=String(s||'').normalize('NFKC').toLowerCase().trim();
@@ -143,42 +145,58 @@ function norm(s){s=String(s||'').normalize('NFKC').toLowerCase().trim();
 function fnv(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(36)}
 function pretty(n){n=String(n).trim().replace(/\s+/g,' ');if(/[؀-ۿ]/.test(n))return n;
  return n.replace(/_/g,'-').split(' ').map(w=>(w.length>1&&(w===w.toLowerCase()||(w===w.toUpperCase()&&w.length>3)))?w.charAt(0).toUpperCase()+w.slice(1).toLowerCase():w).join(' ')}
-let ALL=[],src='';
+let ALL=[],busy=false;
 function build(raw){const seen=new Map();
  raw.forEach(n=>{const k=norm(n);if(!k)return;const h=fnv(k);if(SK.has(h))return;const key=AL[h]?'g'+AL[h]:h;if(!seen.has(key))seen.set(key,{k:key,n:pretty(n)})});
- st.add.forEach(a=>{if(!seen.has(a.k))seen.set(a.k,{k:a.k,n:a.n,m:1})});
+ R.add.forEach(a=>{if(!seen.has(a.k))seen.set(a.k,{k:a.k,n:a.n,m:1})});
  ALL=[...seen.values()]}
-const isW=k=>st.wins.some(w=>w.k===k),isX=k=>st.out.includes(k);
+const isW=k=>R.wins.some(w=>w.k===k),isX=k=>R.out.includes(k)||R.abs.includes(k);
 const pool=()=>ALL.filter(x=>!isW(x.k)&&!isX(x.k));
-function stats(){$('#sN').textContent=pool().length;$('#sW').textContent=st.wins.length}
+function stats(){$('#sN').textContent=pool().length;$('#sW').textContent=R.wins.length}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200)}
 function note(h){$('#msg').innerHTML=h?'<div class="note">'+h+'</div>':''}
+const H=()=>({'Content-Type':'application/json','X-Token':tok||''});
+// تعديل محلي بنفس منطق السيرفر (حتى يشتغل لو انقطع النت، وبعدين يتزامن)
+function apply(o){const k=o.k;
+ if(o.op==='win'){if(!isW(k))R.wins.push({k,n:o.n,t:Date.now()})}
+ else if(o.op==='absent'){R.wins=R.wins.filter(w=>w.k!==k);if(!R.abs.includes(k))R.abs.push(k)}
+ else if(o.op==='toggle'){R.out=R.out.includes(k)?R.out.filter(x=>x!==k):R.out.concat(k)}
+ else if(o.op==='add'){if(!R.add.some(a=>a.k===k))R.add.push({k,n:o.n})}
+ else if(o.op==='reset'){R.wins=[];R.abs=[]}}
+let syncing=false;
+async function sync(){if(!tok||syncing)return false;syncing=true;
+ try{while(st.q.length){const o=st.q[0];const r=await fetch('../api.php?r=raffle',{method:'POST',headers:H(),body:JSON.stringify(o),cache:'no-store'});const j=await r.json();if(!r.ok)throw new Error(j.msg||'err');R=Object.assign(E(),j.r);st.q.shift();save()}
+  const r=await fetch('../api.php?r=raffle',{method:'POST',headers:H(),body:'{}',cache:'no-store'});const j=await r.json();if(!r.ok)throw new Error(j.msg||'err');
+  if(!busy){R=Object.assign(E(),j.r);st.q.forEach(apply);save();build(st.cache);draw()}return true}
+ catch(e){return false}finally{syncing=false}}
+function op(o){apply(o);st.q.push(o);save();build(st.cache);draw();sync()}
 async function load(quiet){
- if(!tok){if(st.cache.length){build(st.cache);src='cache';note('هاي آخر قائمة محفوظة. حتى تتحدث، <a href="../">سجّل دخول للنظام</a> من نفس المتصفح.')}else{build([]);note('سجّل دخول للنظام أول من نفس المتصفح، وبعدين ارجع لهالصفحة.<br><a href="../">افتح النظام</a>')}draw();return}
- try{const r=await fetch('../api.php?r=att/list',{method:'POST',headers:{'Content-Type':'application/json','X-Token':tok},body:'{}',cache:'no-store'});
+ if(!tok){build(st.cache);note(st.cache.length?'هاي آخر قائمة محفوظة. حتى تتحدث، <a href="../">سجّل دخول للنظام</a> من نفس المتصفح.':'سجّل دخول للنظام أول من نفس المتصفح، وبعدين ارجع لهالصفحة.<br><a href="../">افتح النظام</a>');draw();return}
+ try{const r=await fetch('../api.php?r=att/list',{method:'POST',headers:H(),body:'{}',cache:'no-store'});
   const j=await r.json();if(!r.ok)throw new Error(j.msg||'err');
-  const raw=(j.att||[]).sort((a,b)=>(a.t||0)-(b.t||0)).map(x=>x.n);
-  st.cache=raw;save();build(raw);src='live';note('');if(j.title)$('#ttl').textContent=j.title;
-  if(!quiet)toast('انسحبت '+ALL.length+' اسم من رابط الحضور')
- }catch(e){if(st.cache.length){build(st.cache);note('ما گدرت أوصل للنظام هسه — شغالين على آخر قائمة محفوظة ('+st.cache.length+').')}else note('ما گدرت أسحب الأسماء: '+(e.message||'')+'. تأكد انك داخل للنظام كمدير.')}
+  st.cache=(j.att||[]).sort((a,b)=>(a.t||0)-(b.t||0)).map(x=>x.n);save();note('');if(j.title)$('#ttl').textContent=j.title;
+  await sync();build(st.cache);if(!quiet)toast('انسحبت '+ALL.length+' اسم من رابط الحضور')
+ }catch(e){build(st.cache);note(st.cache.length?'ما گدرت أوصل للنظام هسه — شغالين على آخر قائمة محفوظة ('+st.cache.length+').':'ما گدرت أسحب الأسماء: '+(e.message||'')+'. تأكد انك داخل للنظام كمدير.')}
  draw()}
-function draw(){stats();
- $('#wins').innerHTML='';st.wins.forEach((w,i)=>{const c=document.createElement('div');c.className='chip';c.innerHTML='<i>'+(i+1)+'</i><b dir="auto"></b><button title="غايب — نشيله">×</button>';c.querySelector('b').textContent=w.n;
-  c.querySelector('button').onclick=()=>{if(!confirm('«'+w.n+'» غايب؟ ينشال من الفائزين وما يرجع للقرعة.'))return;st.wins.splice(i,1);if(!st.out.includes(w.k))st.out.push(w.k);save();draw();toast('انشال — اسحب فائز بداله')};$('#wins').appendChild(c)});
- const W=$('#wins');W.scrollLeft=W.scrollWidth;
+function lastWin(){const nm=$('#nm'),card=$('#card');if(busy)return;
+ if(R.wins.length){const w=R.wins[R.wins.length-1];if(nm.textContent!==w.n||nm.classList.contains('idle')){nm.textContent=w.n;nm.classList.remove('idle');card.classList.add('win')}$('#lbl').textContent='الفائز رقم '+R.wins.length;$('#go').textContent='اختيار فائز آخر'}
+ else{card.classList.remove('win');nm.textContent='اضغط «اختيار فائز»';nm.classList.add('idle');$('#lbl').textContent='جاهزين للقرعة';$('#sub').textContent='';$('#go').textContent='اختيار فائز'}}
+function draw(){stats();lastWin();
+ const sig=JSON.stringify(R.wins.map(w=>w.k));const W=$('#wins');
+ if(W._sig!==sig){W._sig=sig;W.innerHTML='';R.wins.forEach((w,i)=>{const c=document.createElement('div');c.className='chip';c.innerHTML='<i>'+(i+1)+'</i><b dir="auto"></b><button title="غايب — نشيله">×</button>';c.querySelector('b').textContent=w.n;
+  c.querySelector('button').onclick=()=>{if(!confirm('«'+w.n+'» غايب؟ ينشال من الفائزين وما يرجع للقرعة.'))return;op({op:'absent',k:w.k});toast('انشال — اسحب فائز بداله')};W.appendChild(c)});W.scrollLeft=W.scrollWidth}
  if($('#dr').classList.contains('on'))list()}
 function list(){const q=norm($('#q').value);const L=$('#ls');L.innerHTML='';
  $('#dN').textContent='('+ALL.length+')';
- ALL.filter(x=>!q||norm(x.n).includes(q)).forEach(x=>{const d=document.createElement('div');const w=isW(x.k),o=isX(x.k);
-  d.className='it'+(w?' w':o?' x':'');d.innerHTML='<span class="n" dir="auto"></span><span class="tg">'+(w?'فائز':o?'برّه القرعة':'بالقرعة')+'</span>';d.querySelector('.n').textContent=x.n+(x.m?' ✎':'');
-  d.onclick=()=>{if(w)return toast('هذا فائز — شيله من شريط الفائزين');if(o)st.out=st.out.filter(k=>k!==x.k);else st.out.push(x.k);save();stats();list()};L.appendChild(d)})}
+ ALL.filter(x=>!q||norm(x.n).includes(q)).forEach(x=>{const d=document.createElement('div');const w=isW(x.k),a=R.abs.includes(x.k),o=R.out.includes(x.k);
+  d.className='it'+(w?' w':(o||a)?' x':'');d.innerHTML='<span class="n" dir="auto"></span><span class="tg">'+(w?'فائز':a?'غايب':o?'برّه القرعة':'بالقرعة')+'</span>';d.querySelector('.n').textContent=x.n+(x.m?' ✎':'');
+  d.onclick=()=>{if(w)return toast('هذا فائز — شيله من شريط الفائزين');if(a)return toast('هذا انشال كغايب — يرجع ويه «تصفير الفائزين»');op({op:'toggle',k:x.k})};L.appendChild(d)})}
 // --- sound
 let AC=null;function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}return AC}
 function tone(f,d,t0,g,type){const a=ac();if(!a||st.mute)return;const o=a.createOscillator(),v=a.createGain();o.type=type||'triangle';o.frequency.value=f;v.gain.setValueAtTime(0,a.currentTime+t0);v.gain.linearRampToValueAtTime(g,a.currentTime+t0+.005);v.gain.exponentialRampToValueAtTime(.0001,a.currentTime+t0+d);o.connect(v).connect(a.destination);o.start(a.currentTime+t0);o.stop(a.currentTime+t0+d+.02)}
 const tick=()=>tone(1500,.035,0,.05),fan=()=>{[523,659,784,1047].forEach((f,i)=>tone(f,.5,i*.11,.12,'sine'));tone(1319,.9,.45,.08,'sine')};
 // --- random
 function rnd(n){const a=new Uint32Array(1),lim=Math.floor(4294967296/n)*n;let x;do{crypto.getRandomValues(a);x=a[0]}while(x>=lim);return x%n}
-let busy=false;
 function go(){if(busy)return;const P=pool();if(!P.length){toast(ALL.length?'ماكو أسماء باقية بالقرعة':'ماكو أسماء — سجّل دخول للنظام');return}
  ac();if(AC&&AC.state==='suspended')AC.resume();
  busy=true;$('#go').disabled=true;const card=$('#card'),nm=$('#nm');card.classList.remove('win');card.classList.add('spin');nm.classList.remove('idle');
@@ -186,8 +204,8 @@ function go(){if(busy)return;const P=pool();if(!P.length){toast(ALL.length?'ما
  const win=P[rnd(P.length)];let d=42,t=0;const T=4600;let last=-1;
  (function step(){if(t<T){let i;do{i=rnd(P.length)}while(P.length>1&&i===last);last=i;nm.textContent=P[i].n;tick();t+=d;d=Math.min(d*1.085,420);setTimeout(step,d)}
   else{nm.textContent=win.n;card.classList.remove('spin');void card.offsetWidth;card.classList.add('win');
-   st.wins.push({k:win.k,n:win.n,t:Date.now()});save();$('#lbl').textContent='الفائز رقم '+st.wins.length;$('#sub').textContent='مبروك 🎉';
-   fan();burst();draw();busy=false;$('#go').disabled=false;$('#go').textContent='اختيار فائز آخر'}})()}
+   busy=false;op({op:'win',k:win.k,n:win.n});$('#sub').textContent='مبروك 🎉';
+   fan();burst();$('#go').disabled=false}})()}
 // --- confetti
 const cv=$('#fx'),cx=cv.getContext('2d');let parts=[],raf=0;
 function rs(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}rs();addEventListener('resize',rs);
@@ -204,13 +222,13 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code===
 $('#bR').onclick=()=>load(false);
 const sl=()=>$('#bS').textContent=st.mute?'بدون صوت':'الصوت شغال';sl();$('#bS').onclick=()=>{st.mute=!st.mute;save();sl()};
 $('#bF').onclick=()=>{const d=document;if(!d.fullscreenElement)(d.documentElement.requestFullscreen||d.documentElement.webkitRequestFullscreen||(()=>{})).call(d.documentElement);else d.exitFullscreen()};
-$('#bZ').onclick=()=>{if(!confirm('تصفّر القرعة؟ ينمسح الفائزين وكل الأسماء ترجع.'))return;st.wins=[];st.out=[];save();$('#card').classList.remove('win');$('#nm').textContent='اضغط «اختيار فائز»';$('#nm').classList.add('idle');$('#lbl').textContent='جاهزين للقرعة';$('#sub').textContent='';$('#go').textContent='اختيار فائز';draw()};
-const op=()=>{$('#dr').classList.add('on');list();setTimeout(()=>$('#q').focus(),50)},cl=()=>$('#dr').classList.remove('on');
-$('#bL').onclick=op;$('#drc').onclick=cl;$('#drx').onclick=cl;$('#q').oninput=list;
-$('#addb').onclick=()=>{const v=$('#add').value.trim();if(!v)return;const k='m'+fnv(norm(v));if(ALL.some(x=>x.k===k||norm(x.n)===norm(v)))return toast('الاسم موجود');st.add.push({k,n:pretty(v)});save();$('#add').value='';build(st.cache);draw();list();toast('انضاف')};
+$('#bZ').onclick=()=>{if(!R.wins.length&&!R.abs.length)return toast('ماكو فائزين');if(!confirm('تصفير الفائزين؟ كل الفائزين (والغايبين) يرجعون للقرعة.'))return;op({op:'reset'});toast('تصفّرت — كل الأسماء رجعت')};
+const opn=()=>{$('#dr').classList.add('on');list();setTimeout(()=>$('#q').focus(),50)},cl=()=>$('#dr').classList.remove('on');
+$('#bL').onclick=opn;$('#drc').onclick=cl;$('#drx').onclick=cl;$('#q').oninput=list;
+$('#addb').onclick=()=>{const v=$('#add').value.trim();if(!v)return;const k='m'+fnv(norm(v));if(ALL.some(x=>x.k===k||norm(x.n)===norm(v)))return toast('الاسم موجود');op({op:'add',k,n:pretty(v)});$('#add').value='';toast('انضاف')};
 $('#add').onkeydown=e=>{if(e.key==='Enter')$('#addb').click()};
-if(st.wins.length){const w=st.wins[st.wins.length-1];$('#nm').textContent=w.n;$('#nm').classList.remove('idle');$('#lbl').textContent='آخر فائز · رقم '+st.wins.length;$('#go').textContent='اختيار فائز آخر'}
-load(true);setInterval(()=>{if(!busy&&tok)load(true)},45000);
+build(st.cache);draw();
+load(true);setInterval(()=>{if(!busy&&tok)load(true)},45000);setInterval(()=>{if(!busy)sync()},8000);
 })();
 </script>
 </body>

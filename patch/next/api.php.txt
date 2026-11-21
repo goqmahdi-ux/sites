@@ -858,6 +858,37 @@ switch ($r) {
         if (!$admin && !can($me, 'guests') && !can($me, 'checkin')) deny();
         out(200, ['ok' => true, 'att' => array_map(fn($x) => array_diff_key($x, ['k' => 1]), array_values($S['att'] ?? [])), 'title' => $S['settings']['title']]);
     }
+    case 'raffle': {
+        // قرعة الحضور: الفائزين ينحفظون بالسيرفر (ملف بحده لكل يوم) حتى يبقون بعد التحديث ومن أي جهاز
+        if (!$admin && !can($me, 'guests') && !can($me, 'checkin')) deny();
+        $rf = data_dir() . '/raffle-d' . (int)$S['day'] . '.json';
+        $fh = @fopen($rf, 'c+');
+        if (!$fh) out(500, ['error' => 'storage', 'msg' => 'ما گدرت أحفظ القرعة']);
+        flock($fh, LOCK_EX);
+        $R = json_decode((string)stream_get_contents($fh), true);
+        if (!is_array($R)) $R = [];
+        foreach (['wins', 'abs', 'out', 'add'] as $x) $R[$x] = array_values(is_array($R[$x] ?? null) ? $R[$x] : []);
+        $op = (string)($b['op'] ?? '');
+        $k = mb_substr(trim((string)($b['k'] ?? '')), 0, 40);
+        $n = mb_substr(trim((string)($b['n'] ?? '')), 0, 120);
+        $dup = false;
+        if ($op === 'win' && $k !== '' && $n !== '') {
+            if (in_array($k, array_column($R['wins'], 'k'), true)) $dup = true;
+            else $R['wins'][] = ['k' => $k, 'n' => $n, 't' => now_ms()];
+        } elseif ($op === 'absent' && $k !== '') {
+            $R['wins'] = array_values(array_filter($R['wins'], fn($w) => ($w['k'] ?? '') !== $k));
+            if (!in_array($k, $R['abs'], true)) $R['abs'][] = $k;
+        } elseif ($op === 'toggle' && $k !== '') {
+            $R['out'] = in_array($k, $R['out'], true) ? array_values(array_diff($R['out'], [$k])) : array_merge($R['out'], [$k]);
+        } elseif ($op === 'add' && $k !== '' && $n !== '') {
+            if (!in_array($k, array_column($R['add'], 'k'), true)) $R['add'][] = ['k' => $k, 'n' => $n];
+        } elseif ($op === 'reset') {
+            $R['wins'] = []; $R['abs'] = [];
+        }
+        if ($op !== '') { ftruncate($fh, 0); rewind($fh); fwrite($fh, json_encode($R, JSON_UNESCAPED_UNICODE)); fflush($fh); }
+        flock($fh, LOCK_UN); fclose($fh);
+        out(200, ['ok' => true, 'r' => $R, 'dup' => $dup]);
+    }
     case 'att/delete': {
         if (!$admin) deny();
         $id = (string)($b['id'] ?? '');
