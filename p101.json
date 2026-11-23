@@ -1,0 +1,1 @@
+{"ops": [[293357, 293441, "    const m=p.match(/[×xX*]\\s*(\\d+)/), n=m?+m[1]:1, t=p.replace(/[×xX*]\\s*\\d+/,'').replace(/چ/g,'ج').replace(/ڤ/g,'ف');\n"], [95231, 95254, "const SAFI_VER='V101';\n"]], "files": {}, "h0": "b49ea23114f44685fb3f788396883a10395b6751407dfc25aadc0e636fde9fb4", "h1": "ce55f4efc0569486410246cea2fa2000d15f69e2b3a1297b4e07fbdd5b780da6"}
